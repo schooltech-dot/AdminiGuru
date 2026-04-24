@@ -134,7 +134,7 @@
       <div class="menu-item" onclick="goScreen('jurnal')"><span class="menu-icon">📓</span><span class="menu-label">Jurnal Guru</span></div>
       <div class="menu-item" onclick="goScreen('rekap')"><span class="menu-icon">📊</span><span class="menu-label">Rekap Absensi</span></div>
       <div class="menu-item" onclick="goScreen('cetak')"><span class="menu-icon">🖨️</span><span class="menu-label">Cetak Dokumen</span></div>
-      <div class="menu-item"><span class="menu-icon">📖</span><span class="menu-label">Perpustakaan</span></div>
+      <div class="menu-item" onclick="goScreen('perpustakaan')"><span class="menu-icon">📖</span><span class="menu-label">Perpustakaan</span></div>
       <div class="menu-item" onclick="goScreen('pengaturan')"><span class="menu-icon">⚙️</span><span class="menu-label">Pengaturan</span></div>
     </div>
   </div>
@@ -1705,8 +1705,16 @@
   </div>
   <div class="inner-content">
 
+    <!-- Banner role-based: muncul kalau guru -->
+    <div id="peng-guru-banner" style="display:none;background:#E3F2FD;border-radius:14px;padding:14px;margin-bottom:14px;border:1.5px solid #90CAF9">
+      <div style="font-size:13px;font-weight:700;color:#0D47A1;margin-bottom:4px">👋 Halaman Pengaturan</div>
+      <div style="font-size:12px;color:#1565C0;line-height:1.6">
+        Pengaturan sistem dikelola oleh <strong>Admin</strong>. Di sini kamu hanya bisa mengelola keamanan akun pribadimu.
+      </div>
+    </div>
+
     <!-- Storage Info -->
-    <div class="card" style="background:#E8F5E9;border:1.5px solid #A5D6A7;margin-bottom:14px">
+    <div class="card" id="peng-storage" style="background:#E8F5E9;border:1.5px solid #A5D6A7;margin-bottom:14px">
       <div class="card-title">💾 Status Penyimpanan Lokal</div>
       <div style="font-size:12px;color:#424242;line-height:1.8;margin-bottom:10px">
         Semua data (siswa, guru, nilai, absensi, jadwal, materi) tersimpan otomatis di browser ini.<br>
@@ -1719,7 +1727,7 @@
     </div>
 
     <!-- Identitas Sekolah -->
-    <div class="setting-section">
+    <div class="setting-section" id="peng-identitas">
       <div class="setting-section-title">🏫 Identitas Sekolah</div>
       <div class="card">
         <div class="form-field">
@@ -1758,7 +1766,7 @@
     </div>
 
     <!-- Tahun Pelajaran -->
-    <div class="setting-section">
+    <div class="setting-section" id="peng-tapel">
       <div class="setting-section-title">📅 Tahun Pelajaran</div>
       <div class="card">
         <div class="form-row">
@@ -1787,7 +1795,7 @@
     </div>
 
     <!-- Kurikulum -->
-    <div class="setting-section">
+    <div class="setting-section" id="peng-kurikulum">
       <div class="setting-section-title">📚 Kurikulum & KKM</div>
       <div class="card">
         <div class="form-row">
@@ -1854,7 +1862,7 @@
       </div>
 
       <!-- Daftar akun -->
-      <div class="card" style="margin-bottom:10px">
+      <div class="card" id="peng-akun-daftar" style="margin-bottom:10px">
         <div class="card-title">👥 Daftar Akun Pengguna</div>
         <div id="akun-list" style="margin-bottom:10px"></div>
         <div style="font-size:11px;color:#9E9E9E;margin-bottom:4px">
@@ -1863,7 +1871,7 @@
       </div>
 
       <!-- Tambah akun baru (hanya tampil jika admin) -->
-      <div class="card">
+      <div class="card" id="peng-akun-tambah">
         <div class="card-title">➕ Tambah Akun Baru</div>
         <div class="form-row">
           <div class="form-field">
@@ -1892,7 +1900,7 @@
     </div>
 
     <!-- Data Management -->
-    <div class="setting-section">
+    <div class="setting-section" id="peng-data">
       <div class="setting-section-title">🗄️ Manajemen Data</div>
       <div class="setting-row" onclick="pengaturanReset()">
         <div class="sr-left">
@@ -1913,6 +1921,162 @@
     <button class="nav-item active"><span class="nav-icon">⚙️</span>Setelan</button>
     <button class="nav-item" onclick="goScreen('siswa')"><span class="nav-icon">👥</span>Siswa</button>
     <button class="nav-item" onclick="doLogout()"><span class="nav-icon">🚪</span>Keluar</button>
+  </div>
+</div>
+
+<!-- ==================== PERPUSTAKAAN ==================== -->
+<div id="screen-perpustakaan" class="screen">
+  <div class="inner-header">
+    <div class="inner-topbar">
+      <button class="back-btn" onclick="goScreen('dash')">←</button>
+      <div>
+        <div class="inner-title">📖 Perpustakaan</div>
+        <div class="inner-sub" id="perpus-sub">SD Negeri 3 Kalipang</div>
+      </div>
+    </div>
+  </div>
+  <div class="inner-content">
+
+    <!-- Tab -->
+    <div class="tab-row" id="perpus-tabs">
+      <button class="tab-btn active" onclick="perpusTab('rak',this)">📚 Rak Buku</button>
+      <button class="tab-btn"        onclick="perpusTab('cari',this)">🔍 Cari</button>
+      <button class="tab-btn" id="perpus-tab-tambah-btn" onclick="perpusTab('tambah',this)">➕ Tambah</button>
+    </div>
+
+    <!-- ===== TAB: RAK BUKU ===== -->
+    <div id="perpus-tab-rak">
+      <!-- Filter kategori horizontal scroll -->
+      <div class="perpus-filter-row" id="perpus-filter-row">
+        <button class="perpus-cat-btn active" onclick="perpusFilterKat('',this)">Semua</button>
+        <button class="perpus-cat-btn" onclick="perpusFilterKat('Pelajaran',this)">📚 Pelajaran</button>
+        <button class="perpus-cat-btn" onclick="perpusFilterKat('Fiksi',this)">📖 Fiksi</button>
+        <button class="perpus-cat-btn" onclick="perpusFilterKat('Video',this)">🎥 Video</button>
+        <button class="perpus-cat-btn" onclick="perpusFilterKat('Link Edukasi',this)">🌐 Link Edukasi</button>
+        <button class="perpus-cat-btn" onclick="perpusFilterKat('Referensi',this)">🔬 Referensi</button>
+        <button class="perpus-cat-btn" onclick="perpusFilterKat('Seni & Budaya',this)">🎨 Seni & Budaya</button>
+      </div>
+
+      <!-- Konten rak -->
+      <div id="perpus-rak-content"></div>
+    </div>
+
+    <!-- ===== TAB: CARI ===== -->
+    <div id="perpus-tab-cari" class="hidden">
+      <input class="search-input" id="perpus-search-input"
+        placeholder="🔍  Cari judul, penulis, atau kategori..."
+        oninput="perpusCari(this.value)" style="margin-bottom:10px"/>
+      <div id="perpus-cari-result"></div>
+    </div>
+
+    <!-- ===== TAB: TAMBAH ===== -->
+    <div id="perpus-tab-tambah" class="hidden">
+      <div class="card">
+        <div class="card-title" id="perpus-form-title">➕ Tambah Koleksi Baru</div>
+        <input type="hidden" id="perpus-edit-id" value=""/>
+
+        <div class="form-field">
+          <label class="form-label">Judul <span class="req">*</span></label>
+          <input type="text" id="perpus-judul" class="form-input" placeholder="Contoh: Laskar Pelangi"/>
+        </div>
+        <div class="form-field">
+          <label class="form-label">Penulis / Sumber</label>
+          <input type="text" id="perpus-penulis" class="form-input" placeholder="Contoh: Andrea Hirata / Kemdikbud"/>
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label class="form-label">Kategori <span class="req">*</span></label>
+            <select id="perpus-kategori" class="form-select">
+              <option value="Pelajaran">📚 Pelajaran</option>
+              <option value="Fiksi">📖 Fiksi</option>
+              <option value="Video">🎥 Video</option>
+              <option value="Link Edukasi">🌐 Link Edukasi</option>
+              <option value="Referensi">🔬 Referensi</option>
+              <option value="Seni & Budaya">🎨 Seni & Budaya</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label class="form-label">Untuk Kelas</label>
+            <select id="perpus-kelas" class="form-select">
+              <option value="">Semua Kelas</option>
+              <option value="1">Kelas 1</option>
+              <option value="2">Kelas 2</option>
+              <option value="3">Kelas 3</option>
+              <option value="4">Kelas 4</option>
+              <option value="5">Kelas 5</option>
+              <option value="6">Kelas 6</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-field">
+          <label class="form-label">Link <span class="req">*</span></label>
+          <input type="url" id="perpus-link" class="form-input"
+            placeholder="https://drive.google.com/... atau https://youtube.com/..."/>
+          <div style="font-size:11px;color:#9E9E9E;margin-top:4px">
+            💡 Google Drive, YouTube, website edukasi, dll
+          </div>
+        </div>
+        <div class="form-field">
+          <label class="form-label">URL Cover (opsional)</label>
+          <input type="url" id="perpus-cover" class="form-input"
+            placeholder="https://... (gambar sampul buku)"/>
+        </div>
+        <div class="form-field">
+          <label class="form-label">Deskripsi Singkat</label>
+          <textarea id="perpus-desk" class="form-input" rows="2"
+            placeholder="Ringkasan atau keterangan singkat..." style="resize:none"></textarea>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px">
+          <button class="btn-green" id="perpus-btn-simpan" onclick="perpusSimpan()">💾 Simpan</button>
+          <button id="perpus-btn-batal" onclick="perpusBatalEdit()"
+            style="display:none;padding:12px;background:#FFEBEE;color:#C62828;border:1.5px solid #EF9A9A;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">✕ Batal</button>
+        </div>
+      </div>
+
+      <!-- Tips link Drive -->
+      <div class="card" style="background:#FFF8E1;border:1.5px solid #FFE082;margin-top:0">
+        <div class="card-title">💡 Tips Link Google Drive</div>
+        <div style="font-size:12px;color:#5D4037;line-height:1.7">
+          1. Upload PDF ke Google Drive<br>
+          2. Klik kanan → <strong>Bagikan</strong> → <strong>Siapa saja yang memiliki link</strong><br>
+          3. Salin link & tempel di kolom Link di atas<br>
+          4. PDF akan bisa dibaca langsung di aplikasi ini 📄
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <div class="bottom-nav">
+    <button class="nav-item" onclick="goScreen('dash')"><span class="nav-icon">🏠</span>Beranda</button>
+    <button class="nav-item active"><span class="nav-icon">📖</span>Perpustakaan</button>
+    <button class="nav-item" onclick="goScreen('siswa')"><span class="nav-icon">👥</span>Siswa</button>
+    <button class="nav-item" onclick="doLogout()"><span class="nav-icon">🚪</span>Keluar</button>
+  </div>
+</div>
+
+<!-- Modal baca buku / embed -->
+<div id="perpus-modal-overlay" onclick="perpusModalTutup()"
+  style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:2000"></div>
+<div id="perpus-modal"
+  style="display:none;position:fixed;inset:0;z-index:2001;display:none;flex-direction:column;background:#fff;max-width:480px;margin:auto;border-radius:16px 16px 0 0;bottom:0;top:auto;height:90vh">
+  <div style="padding:14px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #F0F0F0;flex-shrink:0">
+    <div style="flex:1;min-width:0">
+      <div id="perpus-modal-judul" style="font-size:14px;font-weight:700;color:#212121;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
+      <div id="perpus-modal-sub"   style="font-size:11px;color:#9E9E9E"></div>
+    </div>
+    <button onclick="perpusModalTutup()" style="background:#F5F5F5;border:none;border-radius:50%;width:32px;height:32px;font-size:16px;cursor:pointer;flex-shrink:0">✕</button>
+  </div>
+  <div id="perpus-modal-body" style="flex:1;overflow:hidden;position:relative"></div>
+  <div style="padding:12px 16px;border-top:1px solid #F0F0F0;display:flex;gap:8px;flex-shrink:0">
+    <a id="perpus-modal-link-btn" href="#" target="_blank" rel="noopener"
+      style="flex:1;padding:12px;background:#1B5E20;color:#fff;border-radius:10px;font-size:13px;font-weight:700;text-align:center;text-decoration:none">
+      🔗 Buka di Browser
+    </a>
+    <button onclick="perpusModalTutup()"
+      style="padding:12px 18px;background:#F5F5F5;color:#616161;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">
+      Tutup
+    </button>
   </div>
 </div>
 

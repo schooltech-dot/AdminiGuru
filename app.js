@@ -16,12 +16,23 @@ const LS = {
 // ============================================================
 // ==================== AUTO-SAVE ke LocalStorage =============
 // ============================================================
+function perpusLoad() {
+  // Tampilkan/sembunyikan tab Tambah berdasarkan role
+  const tambahBtn = document.getElementById('perpus-tab-tambah-btn');
+  if (tambahBtn) {
+    const bisa = sessionUser && ['admin','kepsek','guru'].includes(sessionUser.role);
+    tambahBtn.style.display = bisa ? '' : 'none';
+  }
+  perpusRenderRak();
+}
+
 function saveAll() {
   LS.set('siswa_master', siswaMaster);
   LS.set('guru_data', guruData);
   LS.set('nilai_data', nilaiData);
   LS.set('ujian_list', ujianList);
   LS.set('absen_history', absenHistory);
+  LS.set('perpus_data', perpusData);
   if (typeof jurnalList !== 'undefined') LS.set('jurnal_list', jurnalList);
   if (typeof jadwalData !== 'undefined') LS.set('jadwal_data', jadwalData);
   if (typeof jadwalRows !== 'undefined') LS.set('jadwal_rows', jadwalRows);
@@ -29,6 +40,9 @@ function saveAll() {
 }
 
 function resetAllData() {
+  if (!sessionUser || (sessionUser.role !== 'admin' && sessionUser.role !== 'kepsek')) {
+    showToast('⛔ Akses ditolak. Hanya Admin yang bisa reset data.', '#C62828'); return;
+  }
   if (!confirm('⚠️ Yakin reset SEMUA data? (Siswa, Guru, Nilai, Ujian, Jadwal, Absensi)\nData demo akan dikembalikan.')) return;
   LS.del('siswa_master');
   LS.del('guru_data');
@@ -55,6 +69,9 @@ function resetAllData() {
 }
 
 function lsInfo() {
+  if (!sessionUser || (sessionUser.role !== 'admin' && sessionUser.role !== 'kepsek')) {
+    showToast('⛔ Akses ditolak.', '#C62828'); return;
+  }
   let total = 0;
   const keys = ['siswa_master','guru_data','nilai_data','ujian_list','jadwal_data','absen_history','materi_docs','app_config'];
   const info = keys.map(k => {
@@ -96,6 +113,7 @@ function goScreen(id) {
   if (id === 'jurnal')     { jurnalInit(); jurnalLoad(); }
   if (id === 'rekap')      rekapLoad();
   if (id === 'raport')     raportInit();
+  if (id === 'perpustakaan') perpusLoad();
 }
 
 window.addEventListener('DOMContentLoaded', function () {
@@ -2688,30 +2706,56 @@ function raportExportExcel() {
 // ============================================================
 
 function pengaturanLoad() {
-  const cfg = LS.get('app_config', appConfig);
-  document.getElementById('cfg-nama-sekolah').value = cfg.namaSekolah  || '';
-  document.getElementById('cfg-alamat').value        = cfg.alamat       || '';
-  document.getElementById('cfg-tapel').value         = cfg.tapel        || '2025/2026';
-  document.getElementById('cfg-semester').value      = cfg.semester     || 'Genap';
-  document.getElementById('cfg-kepsek').value        = cfg.kepsek       || '';
-  document.getElementById('cfg-nip-kepsek').value    = cfg.nipKepsek    || '';
-  document.getElementById('cfg-kkm').value           = cfg.kkm          || 75;
-  document.getElementById('cfg-kurikulum').value     = cfg.kurikulum    || 'Kurikulum Merdeka';
-  if (document.getElementById('cfg-npsn'))  document.getElementById('cfg-npsn').value  = cfg.npsn  || '';
-  if (document.getElementById('cfg-kec'))   document.getElementById('cfg-kec').value   = cfg.kec   || '';
-  if (document.getElementById('cfg-kab'))   document.getElementById('cfg-kab').value   = cfg.kab   || '';
-  if (document.getElementById('cfg-telp'))  document.getElementById('cfg-telp').value  = cfg.telp  || '';
-  if (document.getElementById('cfg-email')) document.getElementById('cfg-email').value = cfg.email || '';
-  // Tampilkan info user yang sedang login
+  // ===== ROLE-BASED VISIBILITY =====
+  const isAdmin  = sessionUser && (sessionUser.role === 'admin' || sessionUser.role === 'kepsek');
+  const isGuru   = !isAdmin;
+
+  // Elemen yang hanya admin/kepsek yang boleh lihat
+  const adminOnlyIds = [
+    'peng-storage', 'peng-identitas', 'peng-tapel',
+    'peng-kurikulum', 'peng-akun-daftar', 'peng-akun-tambah', 'peng-data'
+  ];
+  adminOnlyIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = isAdmin ? '' : 'none';
+  });
+
+  // Banner khusus guru
+  const banner = document.getElementById('peng-guru-banner');
+  if (banner) banner.style.display = isGuru ? '' : 'none';
+
+  // Info login
   const infoEl = document.getElementById('cfg-login-info');
   if (infoEl && sessionUser) {
-    infoEl.textContent = 'Login sebagai: ' + sessionUser.nama + ' (@' + sessionUser.username + ')';
+    const roleLabel = { admin: '⚙️ Admin', kepsek: '🏫 Kepala Sekolah', guru: '👨‍🏫 Guru' };
+    infoEl.textContent = 'Login sebagai: ' + sessionUser.nama + ' (' + (roleLabel[sessionUser.role] || sessionUser.role) + ')';
   }
-  // Render daftar akun
-  akunRender();
+
+  // Isi form pengaturan (hanya admin yang bisa akses field ini, tapi tetap di-load supaya safe)
+  const cfg = LS.get('app_config', appConfig);
+  const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+  setVal('cfg-nama-sekolah', cfg.namaSekolah);
+  setVal('cfg-alamat',       cfg.alamat);
+  setVal('cfg-tapel',        cfg.tapel    || '2025/2026');
+  setVal('cfg-semester',     cfg.semester || 'Genap');
+  setVal('cfg-kepsek',       cfg.kepsek);
+  setVal('cfg-nip-kepsek',   cfg.nipKepsek);
+  setVal('cfg-kkm',          cfg.kkm      || 75);
+  setVal('cfg-kurikulum',    cfg.kurikulum || 'Kurikulum Merdeka');
+  setVal('cfg-npsn',  cfg.npsn);
+  setVal('cfg-kec',   cfg.kec);
+  setVal('cfg-kab',   cfg.kab);
+  setVal('cfg-telp',  cfg.telp);
+  setVal('cfg-email', cfg.email);
+
+  // Render daftar akun (admin saja yang lihat, tapi tidak apa-apa jika dipanggil)
+  if (isAdmin) akunRender();
 }
 
 function pengaturanSimpan() {
+  if (!sessionUser || (sessionUser.role !== 'admin' && sessionUser.role !== 'kepsek')) {
+    showToast('⛔ Akses ditolak. Hanya Admin yang bisa ubah pengaturan.', '#C62828'); return;
+  }
   const cfg = {
     namaSekolah : document.getElementById('cfg-nama-sekolah').value.trim() || 'SD Negeri 3 Kalipang',
     npsn        : document.getElementById('cfg-npsn')?.value.trim()  || '',
@@ -3395,6 +3439,308 @@ function rekapExport() {
   showToast('✅ Rekap absensi diexport!', '#2E7D32');
 }
 
+
+// ============================================================
+// ==================== PERPUSTAKAAN ==========================
+// ============================================================
+const _perpusDemoDefault = [
+  { id:'p1', judul:'Buku Teks Bahasa Indonesia Kelas 4', penulis:'Kemendikbud', kategori:'Pelajaran', kelas:'4', link:'https://buku.kemdikbud.go.id', coverUrl:'', deskripsi:'Buku pelajaran Bahasa Indonesia kurikulum merdeka untuk kelas 4 SD.', addedBy:'admin', addedAt:'2026-01-10' },
+  { id:'p2', judul:'Laskar Pelangi', penulis:'Andrea Hirata', kategori:'Fiksi', kelas:'', link:'https://drive.google.com', coverUrl:'', deskripsi:'Novel tentang semangat anak-anak Belitung dalam mengejar pendidikan.', addedBy:'admin', addedAt:'2026-01-10' },
+  { id:'p3', judul:'Matematika Seru Kelas 3', penulis:'Kemendikbud', kategori:'Pelajaran', kelas:'3', link:'https://buku.kemdikbud.go.id', coverUrl:'', deskripsi:'Buku matematika interaktif kelas 3 SD.', addedBy:'guru1', addedAt:'2026-02-01' },
+  { id:'p4', judul:'Video: Tata Surya untuk SD', penulis:'Ruangguru', kategori:'Video', kelas:'5', link:'https://youtube.com', coverUrl:'', deskripsi:'Penjelasan tata surya yang menarik dan mudah dipahami siswa SD.', addedBy:'guru1', addedAt:'2026-02-14' },
+  { id:'p5', judul:'Ensiklopedia Hewan Nusantara', penulis:'LIPI', kategori:'Referensi', kelas:'', link:'https://lipi.go.id', coverUrl:'', deskripsi:'Kumpulan informasi fauna asli Indonesia.', addedBy:'admin', addedAt:'2026-03-05' },
+  { id:'p6', judul:'Portal Rumah Belajar Kemdikbud', penulis:'Kemendikbud', kategori:'Link Edukasi', kelas:'', link:'https://belajar.kemdikbud.go.id', coverUrl:'', deskripsi:'Platform belajar resmi pemerintah, berisi materi, video, dan kuis.', addedBy:'admin', addedAt:'2026-03-10' },
+  { id:'p7', judul:'Batik Nusantara — Warisan Budaya', penulis:'Museum Batik', kategori:'Seni & Budaya', kelas:'', link:'https://batik.go.id', coverUrl:'', deskripsi:'Mengenal ragam batik dari berbagai daerah di Indonesia.', addedBy:'guru1', addedAt:'2026-03-20' },
+];
+let perpusData = LS.get('perpus_data', _perpusDemoDefault);
+
+const perpusKatIcon = {
+  'Pelajaran'   : '📚',
+  'Fiksi'       : '📖',
+  'Video'       : '🎥',
+  'Link Edukasi': '🌐',
+  'Referensi'   : '🔬',
+  'Seni & Budaya': '🎨',
+};
+const perpusKatColor = {
+  'Pelajaran'   : { bg:'#E8F5E9', clr:'#1B5E20' },
+  'Fiksi'       : { bg:'#FFF8E1', clr:'#E65100' },
+  'Video'       : { bg:'#FCE4EC', clr:'#880E4F' },
+  'Link Edukasi': { bg:'#E3F2FD', clr:'#0D47A1' },
+  'Referensi'   : { bg:'#EDE7F6', clr:'#4527A0' },
+  'Seni & Budaya':{ bg:'#FBE9E7', clr:'#BF360C' },
+};
+
+let _perpusCurKat = '';
+
+// ----- Tab navigation -----
+function perpusTab(tab, el) {
+  ['rak','cari','tambah'].forEach(t => {
+    document.getElementById('perpus-tab-' + t).classList.toggle('hidden', t !== tab);
+  });
+  document.querySelectorAll('#screen-perpustakaan .tab-btn').forEach(b => b.classList.remove('active'));
+  if (el) el.classList.add('active');
+  if (tab === 'rak')   perpusRenderRak();
+  if (tab === 'cari')  { document.getElementById('perpus-search-input').value=''; perpusCari(''); }
+  if (tab === 'tambah') perpusBatalEdit(); // reset form
+}
+
+// ----- Render rak per kategori -----
+function perpusRenderRak() {
+  const el = document.getElementById('perpus-rak-content');
+  if (!el) return;
+
+  let list = [...perpusData];
+  if (_perpusCurKat) list = list.filter(b => b.kategori === _perpusCurKat);
+
+  if (!list.length) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">📚</div><div>Belum ada koleksi' + (_perpusCurKat ? ' di kategori ini' : '') + '.</div></div>';
+    return;
+  }
+
+  // Kelompokkan per kategori
+  const urutan = ['Pelajaran','Fiksi','Video','Link Edukasi','Referensi','Seni & Budaya'];
+  const grouped = {};
+  urutan.forEach(k => { grouped[k] = []; });
+  list.forEach(b => {
+    if (!grouped[b.kategori]) grouped[b.kategori] = [];
+    grouped[b.kategori].push(b);
+  });
+
+  let html = '';
+  urutan.forEach(kat => {
+    const items = grouped[kat];
+    if (!items || !items.length) return;
+    const icon  = perpusKatIcon[kat]  || '📄';
+    const clr   = (perpusKatColor[kat] || {}).clr || '#424242';
+    const bg    = (perpusKatColor[kat] || {}).bg  || '#F5F5F5';
+
+    html += `<div class="perpus-rak-section">
+      <div class="perpus-rak-header">
+        <span style="font-size:18px">${icon}</span>
+        <span class="perpus-rak-title" style="color:${clr}">${kat}</span>
+        <span class="perpus-rak-count">${items.length}</span>
+      </div>
+      <div class="perpus-card-scroll">`;
+
+    items.forEach(b => {
+      const isVideo = b.kategori === 'Video' || b.link.includes('youtube') || b.link.includes('youtu.be');
+      const canEdit = sessionUser && (sessionUser.role === 'admin' || sessionUser.role === 'kepsek' || sessionUser.username === b.addedBy);
+      const coverHtml = b.coverUrl
+        ? `<img src="${b.coverUrl}" style="width:100%;height:90px;object-fit:cover;border-radius:10px 10px 0 0" onerror="this.style.display='none';this.nextSibling.style.display='flex'" /><div style="display:none;height:90px;background:${bg};border-radius:10px 10px 0 0;align-items:center;justify-content:center;font-size:36px">${icon}</div>`
+        : `<div style="height:90px;background:${bg};border-radius:10px 10px 0 0;display:flex;align-items:center;justify-content:center;font-size:36px">${icon}</div>`;
+
+      html += `<div class="perpus-card" onclick="perpusBuka('${b.id}')">
+        ${coverHtml}
+        <div class="perpus-card-body">
+          <div class="perpus-card-judul">${b.judul}</div>
+          <div class="perpus-card-penulis">${b.penulis || '—'}</div>
+          ${b.kelas ? `<div class="perpus-kelas-badge">Kelas ${b.kelas}</div>` : ''}
+          ${isVideo ? '<div class="perpus-type-badge video">▶ Video</div>' : ''}
+        </div>
+        ${canEdit ? `<div class="perpus-card-actions">
+          <button onclick="event.stopPropagation();perpusEdit('${b.id}')" class="perpus-act-btn edit">✏️</button>
+          <button onclick="event.stopPropagation();perpusHapus('${b.id}')" class="perpus-act-btn del">🗑</button>
+        </div>` : ''}
+      </div>`;
+    });
+
+    html += `</div></div>`;
+  });
+
+  el.innerHTML = html;
+
+  // Counter di sub-header
+  const subEl = document.getElementById('perpus-sub');
+  if (subEl) subEl.textContent = perpusData.length + ' koleksi · SD Negeri 3 Kalipang';
+}
+
+function perpusFilterKat(kat, el) {
+  _perpusCurKat = kat;
+  document.querySelectorAll('.perpus-cat-btn').forEach(b => b.classList.remove('active'));
+  if (el) el.classList.add('active');
+  perpusRenderRak();
+}
+
+// ----- Buka buku (modal embed) -----
+function perpusBuka(id) {
+  const b = perpusData.find(x => x.id === id);
+  if (!b) return;
+
+  document.getElementById('perpus-modal-judul').textContent = b.judul;
+  document.getElementById('perpus-modal-sub').textContent   = (b.penulis || '') + (b.kelas ? ' · Kelas ' + b.kelas : '');
+  document.getElementById('perpus-modal-link-btn').href     = b.link;
+
+  const body = document.getElementById('perpus-modal-body');
+
+  // Konversi link Drive ke embed viewer
+  let embedUrl = b.link;
+  if (b.link.includes('drive.google.com/file')) {
+    const match = b.link.match(/\/d\/([^\/]+)/);
+    if (match) embedUrl = 'https://drive.google.com/file/d/' + match[1] + '/preview';
+  } else if (b.link.includes('drive.google.com/open')) {
+    const id2 = new URL(b.link).searchParams.get('id');
+    if (id2) embedUrl = 'https://drive.google.com/file/d/' + id2 + '/preview';
+  } else if (b.link.includes('youtube.com/watch')) {
+    const vid = new URL(b.link).searchParams.get('v');
+    if (vid) embedUrl = 'https://www.youtube.com/embed/' + vid;
+  } else if (b.link.includes('youtu.be/')) {
+    const vid = b.link.split('youtu.be/')[1]?.split('?')[0];
+    if (vid) embedUrl = 'https://www.youtube.com/embed/' + vid;
+  }
+
+  const isDrivable = embedUrl.includes('drive.google.com') || embedUrl.includes('youtube.com/embed');
+
+  if (isDrivable) {
+    body.innerHTML = `<iframe src="${embedUrl}" style="width:100%;height:100%;border:none" allowfullscreen></iframe>`;
+  } else {
+    // Tidak bisa di-embed, tampilkan info + tombol buka
+    const icon = perpusKatIcon[b.kategori] || '📄';
+    const clr  = (perpusKatColor[b.kategori] || {}).bg || '#F5F5F5';
+    body.innerHTML = `
+      <div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;background:${clr}">
+        <div style="font-size:56px;margin-bottom:14px">${icon}</div>
+        <div style="font-size:15px;font-weight:700;color:#212121;margin-bottom:8px">${b.judul}</div>
+        ${b.deskripsi ? `<div style="font-size:12px;color:#616161;line-height:1.6;margin-bottom:16px">${b.deskripsi}</div>` : ''}
+        <div style="font-size:12px;color:#9E9E9E">Konten ini tidak bisa ditampilkan di dalam aplikasi.<br>Gunakan tombol <strong>Buka di Browser</strong> di bawah.</div>
+      </div>`;
+  }
+
+  document.getElementById('perpus-modal-overlay').style.display = 'block';
+  const modal = document.getElementById('perpus-modal');
+  modal.style.display = 'flex';
+  modal.style.position = 'fixed';
+}
+
+function perpusModalTutup() {
+  document.getElementById('perpus-modal-overlay').style.display = 'none';
+  document.getElementById('perpus-modal').style.display = 'none';
+  document.getElementById('perpus-modal-body').innerHTML = ''; // stop video/iframe
+}
+
+// ----- Cari -----
+function perpusCari(q) {
+  const el = document.getElementById('perpus-cari-result');
+  if (!el) return;
+  q = q.toLowerCase().trim();
+  const list = q
+    ? perpusData.filter(b =>
+        b.judul.toLowerCase().includes(q) ||
+        (b.penulis && b.penulis.toLowerCase().includes(q)) ||
+        (b.kategori && b.kategori.toLowerCase().includes(q)) ||
+        (b.deskripsi && b.deskripsi.toLowerCase().includes(q))
+      )
+    : perpusData;
+
+  if (!list.length) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">🔍</div><div>Tidak ditemukan.</div></div>';
+    return;
+  }
+
+  el.innerHTML = list.map(b => {
+    const icon = perpusKatIcon[b.kategori] || '📄';
+    const c    = perpusKatColor[b.kategori] || { bg:'#F5F5F5', clr:'#424242' };
+    const canEdit = sessionUser && (sessionUser.role === 'admin' || sessionUser.role === 'kepsek' || sessionUser.username === b.addedBy);
+    return `<div class="guru-card" style="cursor:pointer" onclick="perpusBuka('${b.id}')">
+      <div style="width:44px;height:44px;border-radius:12px;background:${c.bg};display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">${icon}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:700;color:#212121">${b.judul}</div>
+        <div style="font-size:11px;color:#9E9E9E">${b.penulis || '—'} · <span style="color:${c.clr};font-weight:600">${b.kategori}</span></div>
+        ${b.kelas ? `<span style="font-size:10px;background:#E8F5E9;color:#1B5E20;border-radius:6px;padding:1px 7px;font-weight:600">Kelas ${b.kelas}</span>` : ''}
+      </div>
+      ${canEdit ? `<div style="display:flex;gap:6px">
+        <button onclick="event.stopPropagation();perpusEdit('${b.id}')" class="perpus-act-btn edit">✏️</button>
+        <button onclick="event.stopPropagation();perpusHapus('${b.id}')" class="perpus-act-btn del">🗑</button>
+      </div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// ----- Tambah / Edit / Hapus -----
+function perpusSimpan() {
+  if (!sessionUser || (sessionUser.role !== 'admin' && sessionUser.role !== 'kepsek' && sessionUser.role !== 'guru')) {
+    showToast('⛔ Akses ditolak.', '#C62828'); return;
+  }
+  const judul = document.getElementById('perpus-judul').value.trim();
+  const link  = document.getElementById('perpus-link').value.trim();
+  if (!judul) { showToast('Judul tidak boleh kosong!', '#C62828'); return; }
+  if (!link)  { showToast('Link tidak boleh kosong!', '#C62828'); return; }
+
+  const editId = document.getElementById('perpus-edit-id').value;
+  const item = {
+    id       : editId || 'p' + Date.now(),
+    judul,
+    penulis  : document.getElementById('perpus-penulis').value.trim(),
+    kategori : document.getElementById('perpus-kategori').value,
+    kelas    : document.getElementById('perpus-kelas').value,
+    link,
+    coverUrl : document.getElementById('perpus-cover').value.trim(),
+    deskripsi: document.getElementById('perpus-desk').value.trim(),
+    addedBy  : editId ? (perpusData.find(x=>x.id===editId)||{}).addedBy || sessionUser.username : sessionUser.username,
+    addedAt  : editId ? (perpusData.find(x=>x.id===editId)||{}).addedAt || new Date().toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+  };
+
+  if (editId) {
+    const idx = perpusData.findIndex(x => x.id === editId);
+    if (idx >= 0) perpusData[idx] = item;
+  } else {
+    perpusData.unshift(item);
+  }
+
+  LS.set('perpus_data', perpusData);
+  perpusBatalEdit();
+  showToast('✅ "' + judul + '" berhasil disimpan!', '#2E7D32');
+
+  // Balik ke rak
+  document.querySelectorAll('#screen-perpustakaan .tab-btn')[0].click();
+}
+
+function perpusEdit(id) {
+  const b = perpusData.find(x => x.id === id);
+  if (!b) return;
+
+  document.getElementById('perpus-edit-id').value    = b.id;
+  document.getElementById('perpus-judul').value      = b.judul;
+  document.getElementById('perpus-penulis').value    = b.penulis  || '';
+  document.getElementById('perpus-kategori').value   = b.kategori || 'Pelajaran';
+  document.getElementById('perpus-kelas').value      = b.kelas    || '';
+  document.getElementById('perpus-link').value       = b.link     || '';
+  document.getElementById('perpus-cover').value      = b.coverUrl || '';
+  document.getElementById('perpus-desk').value       = b.deskripsi|| '';
+
+  document.getElementById('perpus-form-title').textContent    = '✏️ Edit Koleksi';
+  document.getElementById('perpus-btn-simpan').textContent    = '💾 Simpan Perubahan';
+  document.getElementById('perpus-btn-batal').style.display   = '';
+
+  // Switch ke tab tambah
+  document.querySelectorAll('#screen-perpustakaan .tab-btn')[2].click();
+  window.scrollTo(0,0);
+}
+
+function perpusBatalEdit() {
+  document.getElementById('perpus-edit-id').value  = '';
+  document.getElementById('perpus-judul').value    = '';
+  document.getElementById('perpus-penulis').value  = '';
+  document.getElementById('perpus-kategori').value = 'Pelajaran';
+  document.getElementById('perpus-kelas').value    = '';
+  document.getElementById('perpus-link').value     = '';
+  document.getElementById('perpus-cover').value    = '';
+  document.getElementById('perpus-desk').value     = '';
+  document.getElementById('perpus-form-title').textContent  = '➕ Tambah Koleksi Baru';
+  document.getElementById('perpus-btn-simpan').textContent  = '💾 Simpan';
+  document.getElementById('perpus-btn-batal').style.display = 'none';
+}
+
+function perpusHapus(id) {
+  const b = perpusData.find(x => x.id === id);
+  if (!b) return;
+  if (!confirm('Hapus "' + b.judul + '"?')) return;
+  perpusData = perpusData.filter(x => x.id !== id);
+  LS.set('perpus_data', perpusData);
+  perpusRenderRak();
+  perpusCari(document.getElementById('perpus-search-input')?.value || '');
+  showToast('🗑 Koleksi dihapus.', '#F57F17');
+}
 
 // ============================================================
 // ==================== CETAK DOKUMEN =========================
