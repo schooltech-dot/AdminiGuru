@@ -713,11 +713,11 @@ function absClearHistory() {
 // Struktur guru: { no, nip, nama, jenisGuru }
 // jenisGuru: "Guru Kelas" | "Guru Mapel PJOK" | "Guru Mapel PAIBP"
 const _guruDemoDefault = [
-  { no: '1', nip: '198203152005012008', nama: 'Sri Wahyuni, S.Pd',   jenisGuru: 'Guru Kelas', kelasAjar: 'Kelas 1' },
-  { no: '2', nip: '199001202019031004', nama: 'Ahmad Fauzan, S.Pd',  jenisGuru: 'Guru Kelas', kelasAjar: 'Kelas 2' },
-  { no: '3', nip: '198507072010012015', nama: 'Dewi Rahayu, S.Pd',   jenisGuru: 'Guru Kelas', kelasAjar: 'Kelas 3' },
-  { no: '4', nip: '197809092003121003', nama: 'Hendra Wijaya, S.Pd', jenisGuru: 'Guru Mapel PJOK', kelasAjar: '' },
-  { no: '5', nip: '199205182018032001', nama: 'Nur Aini, S.Pd.I',    jenisGuru: 'Guru Mapel PAIBP', kelasAjar: '' },
+  { no: '1', nip: '198203152005012008', nama: 'Sri Wahyuni, S.Pd',   jenisGuru: 'Guru Kelas' },
+  { no: '2', nip: '199001202019031004', nama: 'Ahmad Fauzan, S.Pd',  jenisGuru: 'Guru Kelas' },
+  { no: '3', nip: '198507072010012015', nama: 'Dewi Rahayu, S.Pd',   jenisGuru: 'Guru Kelas' },
+  { no: '4', nip: '197809092003121003', nama: 'Hendra Wijaya, S.Pd', jenisGuru: 'Guru Mapel PJOK' },
+  { no: '5', nip: '199205182018032001', nama: 'Nur Aini, S.Pd.I',    jenisGuru: 'Guru Mapel PAIBP' },
 ];
 let guruData = LS.get('guru_data', _guruDemoDefault);
 
@@ -740,32 +740,21 @@ function guruTambah() {
   const nama  = document.getElementById('g-nama').value.trim();
   const nip   = document.getElementById('g-nip').value.trim() || '-';
   const jenis = document.getElementById('g-jenis').value;
-  const kelasAjar = jenis === 'Guru Kelas' ? (document.getElementById('g-kelas-ajar').value || '') : '';
   if (!nama) { showToast('Nama guru tidak boleh kosong!', '#C62828'); return; }
-  if (jenis === 'Guru Kelas' && !kelasAjar) { showToast('Pilih Kelas Mengajar untuk Guru Kelas!', '#E65100'); return; }
 
-  // Cek duplikasi kelas — 1 kelas hanya boleh 1 guru kelas
   const editIdx = parseInt(document.getElementById('g-edit-idx').value);
-  if (jenis === 'Guru Kelas' && kelasAjar) {
-    const dupIdx = guruData.findIndex((g, i) => i !== editIdx && g.jenisGuru === 'Guru Kelas' && g.kelasAjar === kelasAjar);
-    if (dupIdx >= 0) {
-      showToast(`⚠️ ${kelasAjar} sudah diisi oleh ${guruData[dupIdx].nama}!`, '#E65100');
-      return;
-    }
-  }
 
   if (editIdx >= 0) {
     // Mode edit
-    guruData[editIdx] = { ...guruData[editIdx], nip, nama, jenisGuru: jenis, kelasAjar };
+    guruData[editIdx] = { ...guruData[editIdx], nip, nama, jenisGuru: jenis };
     showToast('✅ Data ' + nama + ' diperbarui!', '#2E7D32');
     guruBatalEdit();
   } else {
     // Mode tambah baru
-    guruData.push({ no: String(guruData.length + 1), nip, nama, jenisGuru: jenis, kelasAjar });
+    guruData.push({ no: String(guruData.length + 1), nip, nama, jenisGuru: jenis });
     showToast('✅ ' + nama + ' berhasil ditambahkan!', '#2E7D32');
     document.getElementById('g-nama').value = '';
     document.getElementById('g-nip').value  = '';
-    document.getElementById('g-kelas-ajar').value = '';
   }
   saveAll();
   guruUpdateStats();
@@ -778,8 +767,6 @@ function guruEditMode(idx) {
   document.getElementById('g-nama').value      = g.nama;
   document.getElementById('g-nip').value       = g.nip !== '-' ? g.nip : '';
   document.getElementById('g-jenis').value     = g.jenisGuru || 'Guru Kelas';
-  guruToggleKelas(g.jenisGuru || 'Guru Kelas');
-  document.getElementById('g-kelas-ajar').value = g.kelasAjar || '';
 
   document.getElementById('guru-form-title').textContent     = '✏️ Edit Data Guru';
   document.getElementById('btn-guru-simpan').textContent     = '💾 Simpan Perubahan';
@@ -795,8 +782,6 @@ function guruBatalEdit() {
   document.getElementById('g-nama').value     = '';
   document.getElementById('g-nip').value      = '';
   document.getElementById('g-jenis').value    = 'Guru Kelas';
-  document.getElementById('g-kelas-ajar').value = '';
-  guruToggleKelas('Guru Kelas');
   document.getElementById('guru-form-title').textContent  = '➕ Tambah Data Guru';
   document.getElementById('btn-guru-simpan').textContent  = '➕ Simpan';
   document.getElementById('btn-guru-batal').style.display = 'none';
@@ -851,7 +836,6 @@ function guruRenderDaftar() {
         <div class="guru-name">${g.nama}</div>
         <div class="guru-nip" style="font-size:11px;color:#9E9E9E">NIP: ${g.nip && g.nip !== '-' ? g.nip : '—'}</div>
         <span style="display:inline-block;margin-top:4px;background:${bg};color:${clr};border-radius:8px;padding:2px 9px;font-size:11px;font-weight:700">${icon} ${g.jenisGuru || '—'}</span>
-        ${g.jenisGuru === 'Guru Kelas' && g.kelasAjar ? `<span style="display:inline-block;margin-top:3px;background:#E3F2FD;color:#1565C0;border-radius:8px;padding:2px 9px;font-size:11px;font-weight:700">🏛 ${g.kelasAjar}</span>` : ''}
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
         <button onclick="guruEditMode(${realIdx})" style="background:#E8F5E9;color:#2E7D32;border:none;border-radius:8px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer">✏️ Edit</button>
@@ -874,12 +858,6 @@ function guruCariFilter(q) {
   guruRenderDaftar();
 }
 
-// Tampilkan/sembunyikan field Kelas Mengajar sesuai jenis guru
-function guruToggleKelas(jenis) {
-  const field = document.getElementById('g-kelas-field');
-  if (field) field.style.display = jenis === 'Guru Kelas' ? '' : 'none';
-}
-
 // backward compat
 function guruCari(q) { guruCariFilter(q); }
 function guruRender(list) { guruRenderDaftar(); }
@@ -887,10 +865,10 @@ function guruRender(list) { guruRenderDaftar(); }
 // ----- Export Excel -----
 function guruExportExcel() {
   const wb   = XLSX.utils.book_new();
-  const header = ['No', 'NIP', 'Nama Guru', 'Jenis Guru', 'Kelas Mengajar'];
-  const rows   = guruData.map(g => [g.no, g.nip !== '-' ? g.nip : '', g.nama, g.jenisGuru || '', g.kelasAjar || '-']);
+  const header = ['No', 'NIP', 'Nama Guru', 'Jenis Guru'];
+  const rows   = guruData.map(g => [g.no, g.nip !== '-' ? g.nip : '', g.nama, g.jenisGuru || '']);
   const ws     = XLSX.utils.aoa_to_sheet([header, ...rows]);
-  ws['!cols']  = [{ wch: 5 }, { wch: 22 }, { wch: 28 }, { wch: 22 }, { wch: 14 }];
+  ws['!cols']  = [{ wch: 5 }, { wch: 22 }, { wch: 28 }, { wch: 22 }];
   XLSX.utils.book_append_sheet(wb, ws, 'Data Guru');
   XLSX.writeFile(wb, 'DataGuru_SDN3Kalipang.xlsx');
   showToast('✅ Data guru diexport!', '#2E7D32');
@@ -919,19 +897,6 @@ function guruKepsekPreview() {
   if (el('prev-kota-tgl'))     el('prev-kota-tgl').textContent     = kota;
   if (el('prev-ks-nama'))      el('prev-ks-nama').textContent      = nama;
   if (el('prev-ks-nip'))       el('prev-ks-nip').textContent       = nip ? 'NIP. ' + nip : '';
-
-  // Render tabel wali kelas
-  const tabelEl = el('prev-wali-kelas-table');
-  if (tabelEl) {
-    const kelasList = ['Kelas 1','Kelas 2','Kelas 3','Kelas 4','Kelas 5','Kelas 6'];
-    tabelEl.innerHTML = kelasList.map(k => {
-      const g = guruData.find(gd => gd.jenisGuru === 'Guru Kelas' && gd.kelasAjar === k);
-      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid #F5F5F5">
-        <span style="font-size:12px;font-weight:700;color:#1565C0">🏛 ${k}</span>
-        <span style="font-size:12px;${g ? 'color:#2E7D32;font-weight:600' : 'color:#BDBDBD'}">${g ? g.nama : '— belum diisi —'}</span>
-      </div>`;
-    }).join('');
-  }
 }
 
 function guruKepsekSimpan() {
@@ -2065,16 +2030,10 @@ function nilaiExportExcel() {
   });
   const ws = XLSX.utils.aoa_to_sheet(rows);
   // Add info rows at top
-  const waliNilai = guruData.find(g => g.jenisGuru === 'Guru Kelas' && g.kelasAjar === kelas)
-    || guruData.find(g => g.jenisGuru === 'Guru Kelas');
-  const cfg = LS.get('app_config', {});
   const infoSheet = [
-    [(cfg.namaSekolah || 'SD NEGERI 3 KALIPANG').toUpperCase()],
     ['DAFTAR NILAI '+mapel.toUpperCase()+' — KURIKULUM MERDEKA'],
     ['Kelas / Semester', ': '+kelas+'/'+semester],
     ['Tahun Pelajaran', ': '+tahun],
-    ['Wali Kelas', ': '+(waliNilai?.nama || '-')],
-    ['Kepala Sekolah', ': '+(cfg.kepsek || '-')],
     [],
     ...rows
   ];
@@ -2459,11 +2418,8 @@ function raportGenerate() {
   const sem       = document.getElementById('rp-semester').value;
   const kelasNum  = document.getElementById('rp-kelas').value;
 
-  // Cari wali kelas berdasarkan kelasAjar yang cocok dengan kelas siswa
-  const kelasLabel = s.kelas || ('Kelas ' + kelasNum);
-  const waliGuru = guruData.find(g => g.jenisGuru === 'Guru Kelas' && g.kelasAjar === kelasLabel)
-    || guruData.find(g => g.jenisGuru === 'Guru Kelas');
-  const wali = waliGuru?.nama || appConfig.kepsek;
+  // Cari wali kelas (guru kelas di jadwal, atau default)
+  const wali = guruData.find(g => g.jenisGuru === 'Guru Kelas' || g.jabatan === 'Guru Kelas')?.nama || appConfig.kepsek;
 
   // Populate identitas
   document.getElementById('rp-s-nama').textContent  = s.nama;
@@ -2748,12 +2704,12 @@ function kelasWaliRender() {
     { kelas:'Kelas 6', nama:'-', nip:'-' },
   ];
 
-  // Cocokkan dengan guruData — berdasarkan field kelasAjar
-  waliDefault.forEach(w => {
-    const matched = guruData.find(g => g.jenisGuru === 'Guru Kelas' && g.kelasAjar === w.kelas);
-    if (matched) {
-      w.nama = matched.nama;
-      w.nip  = matched.nip;
+  // Cocokkan dengan guruData — cari guru yang jabatannya Guru Kelas
+  const waliGuru = guruData.filter(g => g.jenisGuru === 'Guru Kelas' || g.jabatan === 'Guru Kelas');
+  waliDefault.forEach((w, i) => {
+    if (waliGuru[i]) {
+      w.nama = waliGuru[i].nama;
+      w.nip  = waliGuru[i].nip;
     }
   });
 
@@ -3295,28 +3251,14 @@ function rekapExport() {
   });
   if (!entries.length) { showToast('Tidak ada data absensi!','#C62828'); return; }
 
-  const cfg = LS.get('app_config', {});
   const wb = XLSX.utils.book_new();
-
-  // Header sekolah
-  const schoolHeader = [
-    [(cfg.namaSekolah || 'SD NEGERI 3 KALIPANG').toUpperCase()],
-    ['REKAP ABSENSI PESERTA DIDIK'],
-    ['Tahun Pelajaran: '+(cfg.tapel||'2025/2026')],
-    ['Kepala Sekolah: '+(cfg.kepsek||'-')+' | NIP: '+(cfg.nipKepsek||'-')],
-    [],
-  ];
-
   const header = ['Tanggal','Kelas','Mata Pelajaran','Jam','Hadir','Izin','Sakit','Alfa','Total'];
   const rows = entries.sort((a,b)=>b.tgl.localeCompare(a.tgl)).map(e => {
     const tot = e.counts.H+e.counts.I+e.counts.S+e.counts.A;
-    // Cari nama wali kelas
-    const waliKls = guruData.find(g => g.jenisGuru === 'Guru Kelas' && g.kelasAjar === e.kelas);
-    return [e.tgl, e.kelas, e.mapel||'-', e.jam||'-', e.counts.H, e.counts.I, e.counts.S, e.counts.A, tot, waliKls?.nama||'-'];
+    return [e.tgl, e.kelas, e.mapel||'-', e.jam||'-', e.counts.H, e.counts.I, e.counts.S, e.counts.A, tot];
   });
-  const fullHeader = [...header, 'Wali Kelas'];
-  const ws = XLSX.utils.aoa_to_sheet([...schoolHeader, fullHeader, ...rows]);
-  ws['!cols'] = [{wch:12},{wch:10},{wch:20},{wch:8},{wch:8},{wch:8},{wch:8},{wch:8},{wch:8},{wch:24}];
+  const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
+  ws['!cols'] = [{wch:12},{wch:10},{wch:20},{wch:8},{wch:8},{wch:8},{wch:8},{wch:8},{wch:8}];
   XLSX.utils.book_append_sheet(wb, ws, 'Rekap Absensi');
   XLSX.writeFile(wb, 'RekapAbsensi_SDN3Kalipang.xlsx');
   showToast('✅ Rekap absensi diexport!', '#2E7D32');
@@ -3357,19 +3299,11 @@ function cetakJurnal() {
 }
 
 function cetakDataGuru() {
-  const cfg = LS.get('app_config', {});
   const wb = XLSX.utils.book_new();
-  const schoolHeader = [
-    [(cfg.namaSekolah || 'SD NEGERI 3 KALIPANG').toUpperCase()],
-    ['DAFTAR GURU & TENAGA PENDIDIK'],
-    ['Tahun Pelajaran: '+(cfg.tapel||'2025/2026')],
-    ['Kepala Sekolah: '+(cfg.kepsek||'-')+' | NIP: '+(cfg.nipKepsek||'-')],
-    [],
-  ];
-  const header = ['No','NIP','Nama Guru','Jenis Guru','Kelas Mengajar'];
-  const rows = guruData.map(g => [g.no, g.nip !== '-' ? g.nip : '', g.nama, g.jenisGuru || g.jabatan || '', g.kelasAjar||'-']);
-  const ws = XLSX.utils.aoa_to_sheet([...schoolHeader, header, ...rows]);
-  ws['!cols'] = [{wch:5},{wch:20},{wch:26},{wch:22},{wch:14}];
+  const header = ['No','NIP','Nama Guru','Jenis Guru'];
+  const rows = guruData.map(g => [g.no, g.nip !== '-' ? g.nip : '', g.nama, g.jenisGuru || g.jabatan || '']);
+  const ws = XLSX.utils.aoa_to_sheet([header,...rows]);
+  ws['!cols'] = [{wch:5},{wch:20},{wch:26},{wch:22},{wch:30},{wch:14}];
   XLSX.utils.book_append_sheet(wb, ws, 'Data Guru');
   XLSX.writeFile(wb, 'DataGuru_SDN3Kalipang.xlsx');
   showToast('✅ Data guru diexport!','#2E7D32');

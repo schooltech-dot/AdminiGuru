@@ -207,26 +207,11 @@
         </div>
         <div class="form-field">
           <label class="form-label">Jenis Guru <span class="req">*</span></label>
-          <select id="g-jenis" class="form-select" onchange="guruToggleKelas(this.value)">
+          <select id="g-jenis" class="form-select">
             <option value="Guru Kelas">👩‍🏫 Guru Kelas</option>
             <option value="Guru Mapel PJOK">🏃 Guru Mapel PJOK</option>
             <option value="Guru Mapel PAIBP">📖 Guru Mapel PAIBP</option>
           </select>
-        </div>
-
-        <!-- Field Kelas Mengajar — muncul hanya saat Guru Kelas -->
-        <div class="form-field" id="g-kelas-field">
-          <label class="form-label">Kelas Mengajar <span class="req">*</span></label>
-          <select id="g-kelas-ajar" class="form-select">
-            <option value="">— Pilih Kelas —</option>
-            <option value="Kelas 1">Kelas 1</option>
-            <option value="Kelas 2">Kelas 2</option>
-            <option value="Kelas 3">Kelas 3</option>
-            <option value="Kelas 4">Kelas 4</option>
-            <option value="Kelas 5">Kelas 5</option>
-            <option value="Kelas 6">Kelas 6</option>
-          </select>
-          <div style="font-size:11px;color:#1B5E20;margin-top:4px">💡 Digunakan sebagai wali kelas pada dokumen cetak (absensi, penilaian, raport)</div>
         </div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px">
@@ -317,16 +302,6 @@
             <div style="font-weight:700;text-decoration:underline" id="prev-ks-nama">Budi Santoso, S.Pd</div>
             <div id="prev-ks-nip">NIP. 197501012000031002</div>
           </div>
-        </div>
-      </div>
-
-      <!-- Tabel Wali Kelas per Kelas -->
-      <div class="card" style="margin-top:4px">
-        <div class="card-title">🏛 Wali Kelas per Rombel</div>
-        <div style="font-size:11px;color:#616161;margin-bottom:10px">Otomatis diisi dari Data Guru → Kelas Mengajar</div>
-        <div id="prev-wali-kelas-table"></div>
-        <div style="font-size:11px;color:#1B5E20;margin-top:8px;padding:8px;background:#E8F5E9;border-radius:8px">
-          💡 Untuk mengubah wali kelas, pergi ke tab <strong>Tambah/Daftar</strong> dan edit data guru tersebut.
         </div>
       </div>
 
