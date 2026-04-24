@@ -44,7 +44,12 @@
   <div class="dash-header">
     <div class="dash-topbar">
       <div class="dash-profile">
-        <div class="dash-avatar">👨‍🏫</div>
+        <!-- Avatar: klik untuk ganti foto -->
+        <div class="dash-avatar" id="dash-avatar-wrap" onclick="avatarSheetOpen()" title="Klik untuk ganti foto profil">
+          <img id="dash-avatar-img" src="" alt="" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:50%"/>
+          <span id="dash-avatar-emoji">👨‍🏫</span>
+          <div class="dash-avatar-edit">✏️</div>
+        </div>
         <div>
           <div class="dash-greeting">Selamat datang,</div>
           <div class="dash-name" id="dash-uname">Guru</div>
@@ -53,11 +58,59 @@
       </div>
       <button class="notif-btn">🔔</button>
     </div>
+
+    <!-- Info strip: tanggal + ringkasan absensi hari ini -->
+    <div class="dash-info-strip">
+      <div class="dash-info-date" id="dash-info-date">—</div>
+      <div class="dash-info-badges">
+        <span class="dash-badge badge-hadir" id="dash-badge-hadir">✅ — hadir</span>
+        <span class="dash-badge badge-alpha" id="dash-badge-alpha">❌ — alpha</span>
+      </div>
+    </div>
   </div>
-  <div class="stats-row">
-    <div class="stat-card"><div class="stat-icon">👩‍🎓</div><div class="stat-num" id="stat-siswa">—</div><div class="stat-lbl">Siswa</div></div>
-    <div class="stat-card"><div class="stat-icon">🏛</div><div class="stat-num">12</div><div class="stat-lbl">Kelas</div></div>
-    <div class="stat-card"><div class="stat-icon">👨‍🏫</div><div class="stat-num" id="stat-guru">—</div><div class="stat-lbl">Guru</div></div>
+
+  <!-- ===== BOTTOM SHEET: Ganti Foto Profil ===== -->
+  <div id="avatar-sheet-overlay" onclick="avatarSheetClose()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:1000"></div>
+  <div id="avatar-sheet" style="display:none;position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#fff;border-radius:20px 20px 0 0;z-index:1001;padding:20px 20px 32px">
+    <div style="width:40px;height:4px;background:#E0E0E0;border-radius:4px;margin:0 auto 18px"></div>
+    <div style="font-size:15px;font-weight:700;color:#212121;margin-bottom:16px">🖼 Foto Profil</div>
+
+    <!-- Preview foto saat ini -->
+    <div style="text-align:center;margin-bottom:18px">
+      <div id="sheet-avatar-preview" style="width:80px;height:80px;border-radius:50%;background:#E8F5E9;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-size:36px;overflow:hidden;border:3px solid #A5D6A7">
+        <img id="sheet-avatar-img" src="" style="display:none;width:100%;height:100%;object-fit:cover"/>
+        <span id="sheet-avatar-emoji">👨‍🏫</span>
+      </div>
+      <div style="font-size:12px;color:#9E9E9E">Foto akan tampil di header dashboard</div>
+    </div>
+
+    <!-- Opsi 1: Upload foto -->
+    <input type="file" id="avatar-file-input" accept="image/*" style="display:none" onchange="avatarHandleUpload(this)"/>
+    <button onclick="document.getElementById('avatar-file-input').click()" style="width:100%;padding:13px;background:#E8F5E9;color:#1B5E20;border:1.5px solid #A5D6A7;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:10px">
+      📷 Upload Foto dari HP
+    </button>
+
+    <!-- Opsi 2: Pilih emoji avatar -->
+    <div style="font-size:12px;font-weight:600;color:#616161;margin-bottom:8px">Atau pilih avatar:</div>
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:16px">
+      <div class="emoji-avatar-opt" onclick="avatarPilihEmoji('👨‍🏫')">👨‍🏫</div>
+      <div class="emoji-avatar-opt" onclick="avatarPilihEmoji('👩‍🏫')">👩‍🏫</div>
+      <div class="emoji-avatar-opt" onclick="avatarPilihEmoji('🧑‍🏫')">🧑‍🏫</div>
+      <div class="emoji-avatar-opt" onclick="avatarPilihEmoji('👨‍💼')">👨‍💼</div>
+      <div class="emoji-avatar-opt" onclick="avatarPilihEmoji('👩‍💼')">👩‍💼</div>
+      <div class="emoji-avatar-opt" onclick="avatarPilihEmoji('🧑‍💼')">🧑‍💼</div>
+      <div class="emoji-avatar-opt" onclick="avatarPilihEmoji('👨‍🎓')">👨‍🎓</div>
+      <div class="emoji-avatar-opt" onclick="avatarPilihEmoji('👩‍🎓')">👩‍🎓</div>
+      <div class="emoji-avatar-opt" onclick="avatarPilihEmoji('🧑‍🎓')">🧑‍🎓</div>
+      <div class="emoji-avatar-opt" onclick="avatarPilihEmoji('🏫')">🏫</div>
+      <div class="emoji-avatar-opt" onclick="avatarPilihEmoji('⭐')">⭐</div>
+      <div class="emoji-avatar-opt" onclick="avatarPilihEmoji('🌟')">🌟</div>
+    </div>
+
+    <!-- Hapus foto -->
+    <button id="btn-hapus-foto" onclick="avatarHapus()" style="width:100%;padding:11px;background:#FFEBEE;color:#C62828;border:1.5px solid #EF9A9A;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer">
+      🗑 Hapus Foto / Reset ke Default
+    </button>
   </div>
   <div class="search-wrap">
     <input class="search-box" placeholder="🔍  Cari menu..." oninput="filterMenu(this.value)" />

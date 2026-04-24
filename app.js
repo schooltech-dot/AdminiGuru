@@ -120,22 +120,29 @@ window.addEventListener('DOMContentLoaded', function () {
 
 // ===== updateDashStats =====
 function updateDashStats() {
-  document.getElementById('stat-siswa').textContent = siswaMaster.length || '—';
-  document.getElementById('stat-guru').textContent = guruData.length;
-  // Update absensi hari ini jika ada elemen
+  // Update info strip: tanggal hari ini
   const now = new Date();
   const tglHariIni = now.toISOString().split('T')[0];
+  const hariNama = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const dateEl = document.getElementById('dash-info-date');
+  if (dateEl) dateEl.textContent = '📅 ' + hariNama;
+
+  // Hitung absensi hari ini
   const absenHariIni = absenHistory[tglHariIni];
-  const statAbsenEl = document.getElementById('stat-absen');
-  if (statAbsenEl) {
-    if (absenHariIni) {
-      let totH = 0;
-      Object.values(absenHariIni).forEach(e => { totH += e.counts.H; });
-      statAbsenEl.textContent = totH;
-    } else {
-      statAbsenEl.textContent = '—';
-    }
+  let totH = 0, totA = 0;
+  if (absenHariIni) {
+    Object.values(absenHariIni).forEach(e => {
+      totH += (e.counts.H || 0);
+      totA += (e.counts.A || 0);
+    });
   }
+  const hadirEl = document.getElementById('dash-badge-hadir');
+  const alphaEl = document.getElementById('dash-badge-alpha');
+  if (hadirEl) hadirEl.textContent = '✅ ' + (absenHariIni ? totH : '—') + ' hadir';
+  if (alphaEl) alphaEl.textContent = '❌ ' + (absenHariIni ? totA : '—') + ' alpha';
+
+  // Update avatar dari storage
+  avatarLoad();
 }
 
 // ===== TOAST =====
@@ -250,6 +257,9 @@ async function doLogin() {
   const rl = { guru: 'Guru', kepsek: 'Kepala Sekolah', admin: 'Administrator' };
   document.getElementById('dash-role').textContent = (rl[akun.role] || akun.role) + ' • SD Negeri 3 Kalipang';
 
+  // Load avatar profil milik akun ini
+  setTimeout(() => avatarLoad(), 100);
+
   const targetScreen = akun.role === 'kepsek' ? 'kepsek' : 'dash';
   setTimeout(() => goScreen(targetScreen), 800);
 }
@@ -262,6 +272,127 @@ function doLogout() {
   document.getElementById('inp-password').value = '';
   document.getElementById('login-msg').className = 'msg-box';
   goScreen('login');
+}
+
+// ============================================================
+// ==================== FOTO PROFIL / AVATAR ==================
+// ============================================================
+function avatarGetKey() {
+  return 'avatar_' + (sessionUser ? sessionUser.username : 'default');
+}
+
+function avatarLoad() {
+  const data = LS.get(avatarGetKey(), null);
+  const imgEl   = document.getElementById('dash-avatar-img');
+  const emojiEl = document.getElementById('dash-avatar-emoji');
+  if (!imgEl || !emojiEl) return;
+
+  if (data && data.type === 'image' && data.src) {
+    imgEl.src = data.src;
+    imgEl.style.display = 'block';
+    emojiEl.style.display = 'none';
+  } else if (data && data.type === 'emoji' && data.value) {
+    emojiEl.textContent = data.value;
+    emojiEl.style.display = '';
+    imgEl.style.display = 'none';
+  } else {
+    // Default berdasarkan role
+    const defaultEmoji = { kepsek: '🏫', admin: '⚙️', guru: '👨‍🏫' };
+    emojiEl.textContent = sessionUser ? (defaultEmoji[sessionUser.role] || '👨‍🏫') : '👨‍🏫';
+    emojiEl.style.display = '';
+    imgEl.style.display = 'none';
+  }
+}
+
+function avatarSheetOpen() {
+  // Sync preview ke state saat ini
+  const data = LS.get(avatarGetKey(), null);
+  const sheetImg   = document.getElementById('sheet-avatar-img');
+  const sheetEmoji = document.getElementById('sheet-avatar-emoji');
+
+  if (data && data.type === 'image' && data.src) {
+    sheetImg.src = data.src;
+    sheetImg.style.display = 'block';
+    sheetEmoji.style.display = 'none';
+  } else {
+    sheetImg.style.display = 'none';
+    sheetEmoji.style.display = '';
+    sheetEmoji.textContent = (data && data.type === 'emoji') ? data.value : '👨‍🏫';
+  }
+
+  document.getElementById('avatar-sheet-overlay').style.display = 'block';
+  document.getElementById('avatar-sheet').style.display = 'block';
+}
+
+function avatarSheetClose() {
+  document.getElementById('avatar-sheet-overlay').style.display = 'none';
+  document.getElementById('avatar-sheet').style.display = 'none';
+}
+
+function avatarHandleUpload(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (!file.type.startsWith('image/')) { showToast('File harus berupa gambar!', '#C62828'); return; }
+  if (file.size > 2 * 1024 * 1024) { showToast('Ukuran foto max 2MB ya bro!', '#C62828'); return; }
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    // Compress via canvas supaya tidak bengkak di localStorage
+    const img = new Image();
+    img.onload = function() {
+      const canvas = document.createElement('canvas');
+      const MAX = 200;
+      let w = img.width, h = img.height;
+      if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+      else        { w = Math.round(w * MAX / h); h = MAX; }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      const compressed = canvas.toDataURL('image/jpeg', 0.82);
+
+      // Simpan
+      LS.set(avatarGetKey(), { type: 'image', src: compressed });
+
+      // Update preview sheet
+      const sheetImg = document.getElementById('sheet-avatar-img');
+      sheetImg.src = compressed;
+      sheetImg.style.display = 'block';
+      document.getElementById('sheet-avatar-emoji').style.display = 'none';
+
+      // Update header
+      avatarLoad();
+      showToast('✅ Foto profil diperbarui!', '#2E7D32');
+      setTimeout(() => avatarSheetClose(), 800);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+  input.value = ''; // reset supaya bisa upload ulang file sama
+}
+
+function avatarPilihEmoji(emoji) {
+  LS.set(avatarGetKey(), { type: 'emoji', value: emoji });
+
+  // Update preview sheet
+  document.getElementById('sheet-avatar-img').style.display = 'none';
+  const sheetEmoji = document.getElementById('sheet-avatar-emoji');
+  sheetEmoji.style.display = '';
+  sheetEmoji.textContent = emoji;
+
+  // Update header
+  avatarLoad();
+  showToast('✅ Avatar diperbarui!', '#2E7D32');
+  setTimeout(() => avatarSheetClose(), 600);
+}
+
+function avatarHapus() {
+  LS.del(avatarGetKey());
+  document.getElementById('sheet-avatar-img').style.display = 'none';
+  const sheetEmoji = document.getElementById('sheet-avatar-emoji');
+  sheetEmoji.style.display = '';
+  sheetEmoji.textContent = '👨‍🏫';
+  avatarLoad();
+  showToast('🗑 Foto profil direset.', '#F57F17');
+  setTimeout(() => avatarSheetClose(), 600);
 }
 
 // ===== MANAJEMEN AKUN (di Pengaturan) =====
