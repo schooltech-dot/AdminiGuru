@@ -2982,16 +2982,39 @@ const DOKUMEN_CONFIG = [
 let materiCurrentDok = null;
 
 function materiInit() {
-  // load dari localStorage jika ada
   const saved = localStorage.getItem('materi_docs');
   if (saved) try { materiDocs = JSON.parse(saved); } catch(e){}
 }
 
 function materiKey() {
-  const kelas   = document.getElementById('mt-kelas').value;
-  const mapel   = document.getElementById('mt-mapel').value;
-  const sem     = document.getElementById('mt-semester').value;
+  const kelas = document.getElementById('mt-kelas').value;
+  const mapel = document.getElementById('mt-mapel').value;
+  const sem   = document.getElementById('mt-semester').value;
   return kelas + '_' + mapel + '_' + sem;
+}
+
+// Dipanggil saat ganti kelas/mapel — refresh tab aktif
+function materiTabChanged() {
+  const activeBtn = document.querySelector('#mt-tab-row .tab-btn.active');
+  if (!activeBtn) { materiLoad(); return; }
+  const idx = [...document.querySelectorAll('#mt-tab-row .tab-btn')].indexOf(activeBtn);
+  const tabs = ['perangkat','jurnal','rekap'];
+  const activeTab = tabs[idx] || 'perangkat';
+  if (activeTab === 'perangkat') materiLoad();
+  else if (activeTab === 'jurnal') mtJurnalLoad();
+  else if (activeTab === 'rekap') mtRekapLoad();
+}
+
+// Tab switcher materi
+function materiTab(tab, el) {
+  ['perangkat','jurnal','rekap'].forEach(t => {
+    document.getElementById('mt-tab-' + t).classList.toggle('hidden', t !== tab);
+  });
+  document.querySelectorAll('#mt-tab-row .tab-btn').forEach(b => b.classList.remove('active'));
+  if (el) el.classList.add('active');
+  if (tab === 'perangkat') materiLoad();
+  else if (tab === 'jurnal') mtJurnalLoad();
+  else if (tab === 'rekap') mtRekapLoad();
 }
 
 function materiLoad() {
@@ -3244,84 +3267,290 @@ function materiDokCount() {
 
 let jurnalList = LS.get('jurnal_list', []);
 
+// ============================================================
+// ==================== JURNAL GURU ===========================
+// ============================================================
+// Data tunggal — dipakai oleh tab Jurnal di Materi DAN screen Jurnal
 function jurnalInit() {
   const d = new Date();
   document.getElementById('jr-tgl').value = d.toISOString().split('T')[0];
 }
+function jurnalLoad() { jurnalInit(); jurnalRender(); }
 
-function jurnalLoad() {
-  jurnalInit();
-  jurnalRender();
+// ----- Helper render satu card jurnal -----
+function _jurnalCardHtml(j, idx, showDel) {
+  const tglFmt = j.tgl ? new Date(j.tgl).toLocaleDateString('id-ID',{weekday:'long',day:'2-digit',month:'long',year:'numeric'}) : '-';
+  return '<div class="jurnal-card">'
+    + '<div class="jurnal-card-header">'
+    + '<span class="jurnal-tgl">📅 ' + tglFmt + '</span>'
+    + '<div style="display:flex;gap:6px;align-items:center">'
+    + '<span class="jurnal-kelas-badge">' + j.kelas + '</span>'
+    + (showDel ? '<button onclick="jurnalHapus(\''+j.id+'\')" style="background:#FFEBEE;color:#C62828;border:none;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer">🗑</button>' : '')
+    + '</div></div>'
+    + '<div class="jurnal-mapel">' + (j.mapel||'—') + ' — ' + (j.jam||'') + '</div>'
+    + (j.materi    ? '<div class="jurnal-materi"><strong>Materi:</strong> '   + j.materi    + '</div>' : '')
+    + (j.kegiatan  ? '<div class="jurnal-materi" style="margin-top:3px"><strong>Kegiatan:</strong> ' + j.kegiatan + '</div>' : '')
+    + '<div class="jurnal-meta-row">'
+    + '<span class="jurnal-meta-pill jp-hadir">H: ' + j.hadir.H + '</span>'
+    + '<span class="jurnal-meta-pill jp-izin">I: '  + j.hadir.I + '</span>'
+    + '<span class="jurnal-meta-pill jp-sakit">S: ' + j.hadir.S + '</span>'
+    + '<span class="jurnal-meta-pill jp-alfa">A: '  + j.hadir.A + '</span>'
+    + (j.refleksi ? '<span class="jurnal-meta-pill jp-refleksi">' + j.refleksi + '</span>' : '')
+    + '</div>'
+    + (j.catatan ? '<div style="font-size:11px;color:#757575;margin-top:6px;padding-top:6px;border-top:1px solid #F5F5F5">📝 ' + j.catatan + '</div>' : '')
+    + '</div>';
 }
 
+// ----- Jurnal screen lama: tampilkan SEMUA lintas kelas -----
+function jurnalRender() {
+  const el = document.getElementById('jurnal-list');
+  if (!el) return;
+  const fKelas = (document.getElementById('jr-filter-kelas') || {}).value || '';
+  const fMapel = (document.getElementById('jr-filter-mapel') || {}).value || '';
+  let list = jurnalList;
+  if (fKelas) list = list.filter(j => j.kelas === fKelas);
+  if (fMapel) list = list.filter(j => j.mapel === fMapel);
+  if (!list.length) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">📓</div><div>Belum ada jurnal' + (fKelas||fMapel ? ' yang sesuai filter' : ' tersimpan') + '.</div></div>';
+    return;
+  }
+  el.innerHTML = list.slice(0,30).map((j,i) => _jurnalCardHtml(j, i, true)).join('');
+}
+
+// ----- Simpan jurnal dari screen Jurnal lama -----
 function jurnalSimpan() {
-  const tgl     = document.getElementById('jr-tgl').value;
-  const kelas   = document.getElementById('jr-kelas').value;
-  const mapel   = document.getElementById('jr-mapel').value;
-  const jam     = document.getElementById('jr-jam').value;
-  const materi  = document.getElementById('jr-materi').value.trim();
-  const kegiatan= document.getElementById('jr-kegiatan').value.trim();
+  const tgl      = document.getElementById('jr-tgl').value;
+  const kelas    = document.getElementById('jr-kelas').value;
+  const mapel    = document.getElementById('jr-mapel').value;
+  const jam      = document.getElementById('jr-jam').value;
+  const materi   = document.getElementById('jr-materi').value.trim();
+  const kegiatan = document.getElementById('jr-kegiatan').value.trim();
   const h = parseInt(document.getElementById('jr-h').value)||0;
   const i = parseInt(document.getElementById('jr-i').value)||0;
   const s = parseInt(document.getElementById('jr-s').value)||0;
   const a = parseInt(document.getElementById('jr-a').value)||0;
-  const refleksi= document.getElementById('jr-refleksi').value;
-  const catatan = document.getElementById('jr-catatan').value.trim();
-
-  if (!tgl || !kelas) { showToast('Tanggal dan kelas wajib diisi!', '#C62828'); return; }
-
-  jurnalList.unshift({
-    id: Date.now(), tgl, kelas, mapel, jam, materi, kegiatan,
-    hadir:{H:h,I:i,S:s,A:a}, refleksi, catatan,
-    savedAt: new Date().toLocaleString('id-ID')
-  });
-  LS.set('jurnal_list', jurnalList);
-
-  // Reset form
-  ['jr-materi','jr-kegiatan','jr-catatan'].forEach(id => document.getElementById(id).value = '');
-  ['jr-h','jr-i','jr-s','jr-a'].forEach(id => document.getElementById(id).value = '0');
-  document.getElementById('jr-refleksi').value = '';
-
-  showToast('✅ Jurnal berhasil disimpan!', '#2E7D32');
+  const refleksi = document.getElementById('jr-refleksi').value;
+  const catatan  = document.getElementById('jr-catatan').value.trim();
+  if (!tgl || !kelas) { showToast('Tanggal dan kelas wajib diisi!','#C62828'); return; }
+  _jurnalPush({ tgl, kelas, mapel, jam, materi, kegiatan, hadir:{H:h,I:i,S:s,A:a}, refleksi, catatan });
+  ['jr-materi','jr-kegiatan','jr-catatan'].forEach(id => document.getElementById(id).value='');
+  ['jr-h','jr-i','jr-s','jr-a'].forEach(id => document.getElementById(id).value='0');
+  document.getElementById('jr-refleksi').value='';
+  showToast('✅ Jurnal berhasil disimpan!','#2E7D32');
   jurnalRender();
 }
 
-function jurnalRender() {
-  const el = document.getElementById('jurnal-list');
-  if (!jurnalList.length) {
-    el.innerHTML = '<div class="empty-state"><div class="empty-icon">📓</div><div>Belum ada jurnal tersimpan.</div></div>';
+// ----- Simpan jurnal dari TAB JURNAL di Materi (kelas+mapel otomatis) -----
+function jurnalSimpanFromMateri() {
+  const kelas    = document.getElementById('mt-kelas').value;
+  const mapel    = document.getElementById('mt-mapel').value;
+  const tgl      = document.getElementById('mt-jr-tgl').value;
+  const jam      = document.getElementById('mt-jr-jam').value;
+  const materi   = document.getElementById('mt-jr-materi').value.trim();
+  const kegiatan = document.getElementById('mt-jr-kegiatan').value.trim();
+  const h = parseInt(document.getElementById('mt-jr-h').value)||0;
+  const i = parseInt(document.getElementById('mt-jr-i').value)||0;
+  const s = parseInt(document.getElementById('mt-jr-s').value)||0;
+  const a = parseInt(document.getElementById('mt-jr-a').value)||0;
+  const refleksi = document.getElementById('mt-jr-refleksi').value;
+  const catatan  = document.getElementById('mt-jr-catatan').value.trim();
+
+  if (!tgl) { showToast('Tanggal wajib diisi!','#C62828'); return; }
+
+  _jurnalPush({ tgl, kelas, mapel, jam, materi, kegiatan, hadir:{H:h,I:i,S:s,A:a}, refleksi, catatan });
+
+  // Reset hanya field konten, bukan kelas/mapel
+  ['mt-jr-materi','mt-jr-kegiatan','mt-jr-catatan'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value='';
+  });
+  ['mt-jr-h','mt-jr-i','mt-jr-s','mt-jr-a'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value='0';
+  });
+  const ref = document.getElementById('mt-jr-refleksi'); if (ref) ref.value='';
+
+  showToast('✅ Jurnal ' + kelas + ' – ' + mapel + ' tersimpan!','#2E7D32');
+  mtJurnalRenderList();
+}
+
+// ----- Helper push jurnal ke list -----
+function _jurnalPush(data) {
+  jurnalList.unshift({ id: Date.now(), ...data, savedAt: new Date().toLocaleString('id-ID') });
+  LS.set('jurnal_list', jurnalList);
+}
+
+// ----- Load tab Jurnal di Materi -----
+function mtJurnalLoad() {
+  const kelas = document.getElementById('mt-kelas').value;
+  const mapel = document.getElementById('mt-mapel').value;
+  const hasCtx = kelas && mapel;
+
+  // Tampilkan/sembunyikan elemen
+  const konteksEl = document.getElementById('mt-jr-konteks');
+  const promptEl  = document.getElementById('mt-jr-empty-prompt');
+  const formEl    = document.getElementById('mt-jr-form');
+
+  if (konteksEl) konteksEl.style.display = hasCtx ? 'block' : 'none';
+  if (promptEl)  promptEl.style.display  = hasCtx ? 'none'  : 'block';
+  if (formEl)    formEl.style.display    = hasCtx ? 'block' : 'none';
+
+  if (!hasCtx) return;
+
+  // Isi label konteks
+  const lblEl = document.getElementById('mt-jr-konteks-label');
+  if (lblEl) lblEl.textContent = kelas + ' — ' + mapel;
+
+  // Set tanggal hari ini
+  const tglEl = document.getElementById('mt-jr-tgl');
+  if (tglEl && !tglEl.value) tglEl.value = new Date().toISOString().split('T')[0];
+
+  // Render riwayat jurnal untuk kelas+mapel ini
+  mtJurnalRenderList();
+}
+
+// ----- Render list jurnal khusus kelas+mapel aktif -----
+function mtJurnalRenderList() {
+  const el    = document.getElementById('mt-jr-list');
+  const kelas = document.getElementById('mt-kelas').value;
+  const mapel = document.getElementById('mt-mapel').value;
+  if (!el) return;
+
+  const filtered = jurnalList.filter(j => j.kelas === kelas && j.mapel === mapel);
+  if (!filtered.length) {
+    el.innerHTML = '<div class="empty-state" style="padding:20px 0"><div class="empty-icon">📓</div><div>Belum ada jurnal untuk ' + kelas + ' – ' + mapel + '.</div></div>';
     return;
   }
-  el.innerHTML = jurnalList.slice(0,30).map((j,idx) => {
-    const tglFmt = j.tgl ? new Date(j.tgl).toLocaleDateString('id-ID',{weekday:'long',day:'2-digit',month:'long',year:'numeric'}) : '-';
-    return '<div class="jurnal-card">'
-      + '<div class="jurnal-card-header">'
-      + '<span class="jurnal-tgl">📅 '+tglFmt+'</span>'
-      + '<div style="display:flex;gap:6px;align-items:center">'
-      + '<span class="jurnal-kelas-badge">'+j.kelas+'</span>'
-      + '<button onclick="jurnalHapus('+idx+')" style="background:#FFEBEE;color:#C62828;border:none;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer">🗑</button>'
-      + '</div></div>'
-      + '<div class="jurnal-mapel">'+(j.mapel||'—')+' — '+j.jam+'</div>'
-      + (j.materi   ? '<div class="jurnal-materi"><strong>Materi:</strong> '+j.materi+'</div>' : '')
-      + (j.kegiatan ? '<div class="jurnal-materi" style="margin-top:3px"><strong>Kegiatan:</strong> '+j.kegiatan+'</div>' : '')
-      + '<div class="jurnal-meta-row">'
-      + '<span class="jurnal-meta-pill jp-hadir">H: '+j.hadir.H+'</span>'
-      + '<span class="jurnal-meta-pill jp-izin">I: '+j.hadir.I+'</span>'
-      + '<span class="jurnal-meta-pill jp-sakit">S: '+j.hadir.S+'</span>'
-      + '<span class="jurnal-meta-pill jp-alfa">A: '+j.hadir.A+'</span>'
-      + (j.refleksi ? '<span class="jurnal-meta-pill jp-refleksi">'+j.refleksi+'</span>' : '')
-      + '</div>'
-      + (j.catatan ? '<div style="font-size:11px;color:#757575;margin-top:6px;padding-top:6px;border-top:1px solid #F5F5F5">📝 '+j.catatan+'</div>' : '')
-      + '</div>';
-  }).join('');
+  el.innerHTML = filtered.slice(0,20).map((j,i) => _jurnalCardHtml(j, i, true)).join('');
 }
 
-function jurnalHapus(idx) {
+// ----- Load tab Rekap di Materi -----
+function mtRekapLoad() {
+  const el    = document.getElementById('mt-rekap-content');
+  const kelas = document.getElementById('mt-kelas').value;
+  const mapel = document.getElementById('mt-mapel').value;
+  if (!el) return;
+
+  if (!kelas || !mapel) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">📊</div><div>Pilih kelas dan mata pelajaran<br>untuk melihat rekap jurnal.</div></div>';
+    return;
+  }
+
+  const filtered = jurnalList.filter(j => j.kelas === kelas && j.mapel === mapel);
+  if (!filtered.length) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">📊</div><div>Belum ada jurnal untuk<br>' + kelas + ' – ' + mapel + '.</div></div>';
+    return;
+  }
+
+  // Hitung statistik
+  const totH = filtered.reduce((s,j) => s + (j.hadir.H||0), 0);
+  const totA = filtered.reduce((s,j) => s + (j.hadir.A||0), 0);
+  const totI = filtered.reduce((s,j) => s + (j.hadir.I||0), 0);
+  const totS = filtered.reduce((s,j) => s + (j.hadir.S||0), 0);
+  const pertemuan = filtered.length;
+
+  // Refleksi terbanyak
+  const reflCounts = {};
+  filtered.forEach(j => { if (j.refleksi) reflCounts[j.refleksi] = (reflCounts[j.refleksi]||0)+1; });
+  const topRefl = Object.entries(reflCounts).sort((a,b)=>b[1]-a[1])[0];
+
+  // Grup per bulan
+  const perBulan = {};
+  filtered.forEach(j => {
+    const bln = j.tgl ? j.tgl.substring(0,7) : 'Lainnya';
+    if (!perBulan[bln]) perBulan[bln] = [];
+    perBulan[bln].push(j);
+  });
+
+  let html = `
+  <div class="card" style="margin-bottom:12px">
+    <div class="card-title">📊 Rekap Jurnal — ${kelas} · ${mapel}</div>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:10px">
+      <div style="background:#E8F5E9;border-radius:12px;padding:12px;text-align:center">
+        <div style="font-size:22px;font-weight:800;color:#1B5E20">${pertemuan}</div>
+        <div style="font-size:11px;color:#2E7D32;font-weight:600">Pertemuan</div>
+      </div>
+      <div style="background:#E3F2FD;border-radius:12px;padding:12px;text-align:center">
+        <div style="font-size:22px;font-weight:800;color:#1565C0">${totH}</div>
+        <div style="font-size:11px;color:#1565C0;font-weight:600">Total Hadir</div>
+      </div>
+      <div style="background:#FFF8E1;border-radius:12px;padding:12px;text-align:center">
+        <div style="font-size:22px;font-weight:800;color:#E65100">${totI}</div>
+        <div style="font-size:11px;color:#E65100;font-weight:600">Total Izin</div>
+      </div>
+      <div style="background:#FFEBEE;border-radius:12px;padding:12px;text-align:center">
+        <div style="font-size:22px;font-weight:800;color:#C62828">${totA}</div>
+        <div style="font-size:11px;color:#C62828;font-weight:600">Total Alpha</div>
+      </div>
+    </div>
+    ${topRefl ? `<div style="font-size:12px;color:#616161">Refleksi terbanyak: <strong>${topRefl[0]}</strong> (${topRefl[1]}x)</div>` : ''}
+  </div>
+  <button onclick="jurnalExportFiltered()" style="width:100%;margin-bottom:12px;padding:12px;background:#E3F2FD;color:#1565C0;border:1.5px solid #90CAF9;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">
+    ⬇ Export Excel — ${kelas} · ${mapel}
+  </button>`;
+
+  // Timeline per bulan
+  Object.entries(perBulan).sort((a,b)=>b[0].localeCompare(a[0])).forEach(([bln, items]) => {
+    const blnFmt = bln !== 'Lainnya'
+      ? new Date(bln+'-01').toLocaleDateString('id-ID',{month:'long',year:'numeric'})
+      : 'Lainnya';
+    html += `<div style="font-size:12px;font-weight:700;color:#616161;margin:12px 0 8px;display:flex;align-items:center;gap:8px">
+      <span style="flex:1;height:1px;background:#E0E0E0"></span>
+      📅 ${blnFmt} · ${items.length} pertemuan
+      <span style="flex:1;height:1px;background:#E0E0E0"></span>
+    </div>`;
+    html += items.map((j,i) => _jurnalCardHtml(j, i, false)).join('');
+  });
+
+  el.innerHTML = html;
+}
+
+// ----- Export jurnal khusus kelas+mapel aktif -----
+function jurnalExportFiltered() {
+  const kelas = document.getElementById('mt-kelas')?.value || '';
+  const mapel = document.getElementById('mt-mapel')?.value || '';
+  const list  = kelas && mapel
+    ? jurnalList.filter(j => j.kelas === kelas && j.mapel === mapel)
+    : jurnalList;
+
+  if (!list.length) { showToast('Tidak ada jurnal untuk diexport!','#C62828'); return; }
+  const wb     = XLSX.utils.book_new();
+  const header = ['Tanggal','Kelas','Mata Pelajaran','Jam','Materi/TP','Kegiatan','Hadir','Izin','Sakit','Alpha','Refleksi','Catatan/RTL'];
+  const rows   = list.map(j => [
+    j.tgl, j.kelas, j.mapel||'-', j.jam, j.materi||'-', j.kegiatan||'-',
+    j.hadir.H, j.hadir.I, j.hadir.S, j.hadir.A, j.refleksi||'-', j.catatan||'-'
+  ]);
+  const ws = XLSX.utils.aoa_to_sheet([header,...rows]);
+  ws['!cols'] = [{wch:14},{wch:10},{wch:20},{wch:8},{wch:30},{wch:30},{wch:7},{wch:7},{wch:7},{wch:7},{wch:26},{wch:30}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Jurnal Guru');
+  const fname = kelas && mapel
+    ? 'Jurnal_' + kelas.replace(' ','') + '_' + mapel.replace(/ /g,'_') + '.xlsx'
+    : 'JurnalGuru_SDN3Kalipang.xlsx';
+  XLSX.writeFile(wb, fname);
+  showToast('✅ Jurnal berhasil diexport!','#2E7D32');
+}
+
+// ----- Export semua jurnal (screen jurnal lama) -----
+function jurnalExport() {
+  if (!jurnalList.length) { showToast('Tidak ada jurnal untuk diexport!','#C62828'); return; }
+  const wb     = XLSX.utils.book_new();
+  const header = ['Tanggal','Kelas','Mata Pelajaran','Jam','Materi/TP','Kegiatan','Hadir','Izin','Sakit','Alpha','Refleksi','Catatan/RTL'];
+  const rows   = jurnalList.map(j => [
+    j.tgl, j.kelas, j.mapel||'-', j.jam, j.materi||'-', j.kegiatan||'-',
+    j.hadir.H, j.hadir.I, j.hadir.S, j.hadir.A, j.refleksi||'-', j.catatan||'-'
+  ]);
+  const ws = XLSX.utils.aoa_to_sheet([header,...rows]);
+  ws['!cols'] = [{wch:14},{wch:10},{wch:20},{wch:8},{wch:30},{wch:30},{wch:7},{wch:7},{wch:7},{wch:7},{wch:26},{wch:30}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Jurnal Guru');
+  XLSX.writeFile(wb, 'JurnalGuru_SDN3Kalipang.xlsx');
+  showToast('✅ Jurnal berhasil diexport!','#2E7D32');
+}
+
+function jurnalHapus(id) {
   if (!confirm('Hapus jurnal ini?')) return;
-  jurnalList.splice(idx, 1);
+  jurnalList = jurnalList.filter(j => String(j.id) !== String(id));
   LS.set('jurnal_list', jurnalList);
   jurnalRender();
-  showToast('🗑 Jurnal dihapus.', '#F57F17');
+  mtJurnalRenderList();
+  showToast('🗑 Jurnal dihapus.','#F57F17');
 }
 
 function jurnalHapusSemua() {
@@ -3329,22 +3558,7 @@ function jurnalHapusSemua() {
   jurnalList = [];
   LS.set('jurnal_list', jurnalList);
   jurnalRender();
-  showToast('🗑 Semua jurnal dihapus.', '#F57F17');
-}
-
-function jurnalExport() {
-  if (!jurnalList.length) { showToast('Tidak ada jurnal untuk diexport!','#C62828'); return; }
-  const wb = XLSX.utils.book_new();
-  const header = ['Tanggal','Kelas','Mata Pelajaran','Jam','Materi/TP','Kegiatan','Hadir','Izin','Sakit','Alfa','Refleksi','Catatan/RTL'];
-  const rows = jurnalList.map(j => [
-    j.tgl, j.kelas, j.mapel||'-', j.jam, j.materi||'-', j.kegiatan||'-',
-    j.hadir.H, j.hadir.I, j.hadir.S, j.hadir.A, j.refleksi||'-', j.catatan||'-'
-  ]);
-  const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
-  ws['!cols'] = [{wch:14},{wch:10},{wch:20},{wch:8},{wch:30},{wch:30},{wch:7},{wch:7},{wch:7},{wch:7},{wch:26},{wch:30}];
-  XLSX.utils.book_append_sheet(wb, ws, 'Jurnal Guru');
-  XLSX.writeFile(wb, 'JurnalGuru_SDN3Kalipang.xlsx');
-  showToast('✅ Jurnal berhasil diexport!', '#2E7D32');
+  showToast('🗑 Semua jurnal dihapus.','#F57F17');
 }
 
 
