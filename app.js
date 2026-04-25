@@ -3271,10 +3271,53 @@ let jurnalList = LS.get('jurnal_list', []);
 // ==================== JURNAL GURU ===========================
 // ============================================================
 // Data tunggal — dipakai oleh tab Jurnal di Materi DAN screen Jurnal
+
+function jurnalTab(tab, el) {
+  ['isi','riwayat'].forEach(t => {
+    document.getElementById('jr-tab-' + t).classList.toggle('hidden', t !== tab);
+  });
+  document.querySelectorAll('#screen-jurnal .tab-btn').forEach(b => b.classList.remove('active'));
+  if (el) el.classList.add('active');
+  if (tab === 'riwayat') jurnalRender();
+}
+
+// Toggle textarea manual refleksi
+function jurnalToggleRefleksi(prefix) {
+  const sel = document.getElementById(prefix + '-refleksi');
+  const txt = document.getElementById(prefix + '-refleksi-manual');
+  if (!sel || !txt) return;
+  txt.style.display = sel.value === '__manual__' ? 'block' : 'none';
+  if (sel.value === '__manual__') txt.focus();
+}
+
+// Toggle textarea manual RTL
+function jurnalToggleRTL(prefix) {
+  const sel = document.getElementById(prefix + '-rtl-opsi');
+  const txt = document.getElementById(prefix + '-catatan');
+  if (!sel || !txt) return;
+  if (sel.value === '__manual__') {
+    txt.value = '';
+    txt.focus();
+  } else if (sel.value) {
+    txt.value = sel.value;
+  }
+}
+
+// Helper ambil nilai refleksi (dropdown atau manual)
+function _getRefleksi(prefix) {
+  const sel = document.getElementById(prefix + '-refleksi');
+  const txt = document.getElementById(prefix + '-refleksi-manual');
+  if (!sel) return '';
+  if (sel.value === '__manual__') return txt ? txt.value.trim() : '';
+  return sel.value;
+}
+
 function jurnalInit() {
   const d = new Date();
-  document.getElementById('jr-tgl').value = d.toISOString().split('T')[0];
+  const tglEl = document.getElementById('jr-tgl');
+  if (tglEl) tglEl.value = d.toISOString().split('T')[0];
 }
+
 function jurnalLoad() { jurnalInit(); jurnalRender(); }
 
 // ----- Helper render satu card jurnal -----
@@ -3317,7 +3360,7 @@ function jurnalRender() {
   el.innerHTML = list.slice(0,30).map((j,i) => _jurnalCardHtml(j, i, true)).join('');
 }
 
-// ----- Simpan jurnal dari screen Jurnal lama -----
+// ----- Simpan jurnal dari screen Jurnal -----
 function jurnalSimpan() {
   const tgl      = document.getElementById('jr-tgl').value;
   const kelas    = document.getElementById('jr-kelas').value;
@@ -3329,15 +3372,29 @@ function jurnalSimpan() {
   const i = parseInt(document.getElementById('jr-i').value)||0;
   const s = parseInt(document.getElementById('jr-s').value)||0;
   const a = parseInt(document.getElementById('jr-a').value)||0;
-  const refleksi = document.getElementById('jr-refleksi').value;
+  const refleksi = _getRefleksi('jr');
   const catatan  = document.getElementById('jr-catatan').value.trim();
+
   if (!tgl || !kelas) { showToast('Tanggal dan kelas wajib diisi!','#C62828'); return; }
+
   _jurnalPush({ tgl, kelas, mapel, jam, materi, kegiatan, hadir:{H:h,I:i,S:s,A:a}, refleksi, catatan });
-  ['jr-materi','jr-kegiatan','jr-catatan'].forEach(id => document.getElementById(id).value='');
-  ['jr-h','jr-i','jr-s','jr-a'].forEach(id => document.getElementById(id).value='0');
-  document.getElementById('jr-refleksi').value='';
+
+  // Reset konten form, tapi pertahankan kelas & tanggal
+  ['jr-materi','jr-kegiatan'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  ['jr-h','jr-i','jr-s','jr-a'].forEach(id => { const el=document.getElementById(id); if(el) el.value='0'; });
+  document.getElementById('jr-refleksi').value = '';
+  document.getElementById('jr-refleksi-manual').style.display = 'none';
+  document.getElementById('jr-refleksi-manual').value = '';
+  document.getElementById('jr-rtl-opsi').value = '';
+  document.getElementById('jr-catatan').value = '';
+
   showToast('✅ Jurnal berhasil disimpan!','#2E7D32');
-  jurnalRender();
+
+  // Auto pindah ke tab riwayat setelah simpan
+  setTimeout(() => {
+    const riwayatBtn = document.querySelectorAll('#screen-jurnal .tab-btn')[1];
+    if (riwayatBtn) riwayatBtn.click();
+  }, 800);
 }
 
 // ----- Simpan jurnal dari TAB JURNAL di Materi (kelas+mapel otomatis) -----
@@ -3352,7 +3409,7 @@ function jurnalSimpanFromMateri() {
   const i = parseInt(document.getElementById('mt-jr-i').value)||0;
   const s = parseInt(document.getElementById('mt-jr-s').value)||0;
   const a = parseInt(document.getElementById('mt-jr-a').value)||0;
-  const refleksi = document.getElementById('mt-jr-refleksi').value;
+  const refleksi = _getRefleksi('mt-jr');
   const catatan  = document.getElementById('mt-jr-catatan').value.trim();
 
   if (!tgl) { showToast('Tanggal wajib diisi!','#C62828'); return; }
@@ -3360,13 +3417,17 @@ function jurnalSimpanFromMateri() {
   _jurnalPush({ tgl, kelas, mapel, jam, materi, kegiatan, hadir:{H:h,I:i,S:s,A:a}, refleksi, catatan });
 
   // Reset hanya field konten, bukan kelas/mapel
-  ['mt-jr-materi','mt-jr-kegiatan','mt-jr-catatan'].forEach(id => {
+  ['mt-jr-materi','mt-jr-kegiatan'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value='';
   });
   ['mt-jr-h','mt-jr-i','mt-jr-s','mt-jr-a'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value='0';
   });
   const ref = document.getElementById('mt-jr-refleksi'); if (ref) ref.value='';
+  const refM = document.getElementById('mt-jr-refleksi-manual');
+  if (refM) { refM.value=''; refM.style.display='none'; }
+  const rtl = document.getElementById('mt-jr-rtl-opsi'); if (rtl) rtl.value='';
+  const cat = document.getElementById('mt-jr-catatan'); if (cat) cat.value='';
 
   showToast('✅ Jurnal ' + kelas + ' – ' + mapel + ' tersimpan!','#2E7D32');
   mtJurnalRenderList();

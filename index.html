@@ -1065,20 +1065,38 @@
 
           <div class="form-field">
             <label class="form-label">Refleksi Pembelajaran</label>
-            <select id="mt-jr-refleksi" class="form-select">
-              <option value="">-- Pilih --</option>
-              <option>😊 Pembelajaran berjalan baik</option>
-              <option>📈 Perlu peningkatan metode</option>
-              <option>🔄 Perlu pengulangan materi</option>
-              <option>⚠️ Banyak siswa belum paham</option>
-              <option>✅ Semua tujuan tercapai</option>
+            <select id="mt-jr-refleksi" class="form-select" onchange="jurnalToggleRefleksi('mt-jr')">
+              <option value="">-- Pilih opsi atau tulis manual --</option>
+              <option>😊 Pembelajaran berjalan baik, siswa aktif dan antusias</option>
+              <option>✅ Semua tujuan pembelajaran tercapai</option>
+              <option>📈 Perlu peningkatan metode mengajar</option>
+              <option>🔄 Materi perlu diulang di pertemuan berikutnya</option>
+              <option>⚠️ Banyak siswa belum memahami materi</option>
+              <option>🎯 Sebagian besar siswa sudah paham, perlu pengayaan</option>
+              <option>📝 Perlu perbaikan soal evaluasi</option>
+              <option value="__manual__">✏️ Tulis refleksi sendiri...</option>
             </select>
+            <textarea id="mt-jr-refleksi-manual" class="form-input" rows="2"
+              placeholder="Tulis refleksi pembelajaran Anda di sini..."
+              style="resize:none;margin-top:8px;display:none"></textarea>
           </div>
 
           <div class="form-field">
-            <label class="form-label">Catatan / RTL</label>
+            <label class="form-label">Rencana Tindak Lanjut (RTL)</label>
+            <select id="mt-jr-rtl-opsi" class="form-select" onchange="jurnalToggleRTL('mt-jr')" style="margin-bottom:8px">
+              <option value="">-- Pilih opsi atau tulis manual --</option>
+              <option>Mengulang materi di pertemuan berikutnya</option>
+              <option>Memberikan tugas latihan tambahan</option>
+              <option>Memberikan bimbingan individual kepada siswa yang belum paham</option>
+              <option>Menggunakan media pembelajaran yang lebih menarik</option>
+              <option>Melakukan variasi metode mengajar</option>
+              <option>Koordinasi dengan orang tua siswa yang bermasalah</option>
+              <option>Melanjutkan ke materi berikutnya</option>
+              <option value="__manual__">✏️ Tulis RTL sendiri...</option>
+            </select>
             <textarea id="mt-jr-catatan" class="form-input" rows="2"
-              placeholder="Rencana tindak lanjut..." style="resize:none"></textarea>
+              placeholder="Tulis rencana tindak lanjut secara detail..."
+              style="resize:none"></textarea>
           </div>
 
           <button class="btn-green" onclick="jurnalSimpanFromMateri()">💾 Simpan Jurnal</button>
@@ -1143,52 +1161,173 @@
       <button class="back-btn" onclick="goScreen('dash')">←</button>
       <div>
         <div class="inner-title">📓 Jurnal Guru</div>
-        <div class="inner-sub">Rekap Semua Kelas & Mapel</div>
+        <div class="inner-sub">Catatan Refleksi Pembelajaran</div>
       </div>
     </div>
   </div>
   <div class="inner-content">
 
-    <!-- Info: cara isi jurnal -->
-    <div style="background:#E8F5E9;border-radius:12px;padding:11px 14px;margin-bottom:14px;font-size:12px;color:#1B5E20;display:flex;gap:8px">
-      <span>💡</span>
-      <span>Untuk <strong>isi jurnal harian</strong>, buka menu <strong>Materi & Perangkat Ajar</strong> → pilih Kelas & Mapel → tab <strong>📓 Jurnal</strong>.</span>
+    <!-- Tab -->
+    <div class="tab-row">
+      <button class="tab-btn active" onclick="jurnalTab('isi',this)">✏️ Isi Jurnal</button>
+      <button class="tab-btn"        onclick="jurnalTab('riwayat',this)">📋 Riwayat</button>
     </div>
 
-    <!-- Filter -->
-    <div class="card" style="margin-bottom:10px">
-      <div class="form-row">
-        <div class="form-field">
-          <label class="form-label">Filter Kelas</label>
-          <select id="jr-filter-kelas" class="form-select" onchange="jurnalRender()">
-            <option value="">Semua Kelas</option>
-            <option>Kelas 1</option><option>Kelas 2</option><option>Kelas 3</option>
-            <option>Kelas 4</option><option>Kelas 5</option><option>Kelas 6</option>
-          </select>
+    <!-- ===== TAB: ISI JURNAL ===== -->
+    <div id="jr-tab-isi">
+      <div class="card">
+        <div class="card-title">✏️ Input Jurnal Harian</div>
+
+        <div class="form-row">
+          <div class="form-field">
+            <label class="form-label">Tanggal <span class="req">*</span></label>
+            <input type="date" id="jr-tgl" class="form-input"/>
+          </div>
+          <div class="form-field">
+            <label class="form-label">Jam Ke</label>
+            <select id="jr-jam" class="form-select">
+              <option>Jam 1</option><option>Jam 2</option><option>Jam 3</option>
+              <option>Jam 4</option><option>Jam 5</option><option>Jam 6</option>
+            </select>
+          </div>
         </div>
-        <div class="form-field">
-          <label class="form-label">Filter Mapel</label>
-          <select id="jr-filter-mapel" class="form-select" onchange="jurnalRender()">
-            <option value="">Semua Mapel</option>
-            <option>PAIBP</option><option>Pendidikan Pancasila</option>
-            <option>Bahasa Indonesia</option><option>Matematika</option>
-            <option>PJOK</option><option>Seni Rupa</option><option>IPAS</option>
-            <option>Bahasa Inggris</option><option>Mulok Bahasa Jawa</option>
-          </select>
+
+        <div class="form-row">
+          <div class="form-field">
+            <label class="form-label">Kelas <span class="req">*</span></label>
+            <select id="jr-kelas" class="form-select">
+              <option value="">-- Pilih --</option>
+              <option>Kelas 1</option><option>Kelas 2</option><option>Kelas 3</option>
+              <option>Kelas 4</option><option>Kelas 5</option><option>Kelas 6</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label class="form-label">Mata Pelajaran</label>
+            <select id="jr-mapel" class="form-select">
+              <option value="">-- Pilih --</option>
+              <option>PAIBP</option><option>Pendidikan Pancasila</option>
+              <option>Bahasa Indonesia</option><option>Matematika</option>
+              <option>PJOK</option><option>Seni Rupa</option><option>IPAS</option>
+              <option>Bahasa Inggris</option><option>Mulok Bahasa Jawa</option>
+            </select>
+          </div>
         </div>
+
+        <div class="form-field">
+          <label class="form-label">Tujuan Pembelajaran / Materi</label>
+          <textarea id="jr-materi" class="form-input" rows="2"
+            placeholder="Contoh: Siswa mampu memahami konsep bilangan pecahan sederhana..."
+            style="resize:none"></textarea>
+        </div>
+
+        <div class="form-field">
+          <label class="form-label">Kegiatan Pembelajaran</label>
+          <textarea id="jr-kegiatan" class="form-input" rows="2"
+            placeholder="Contoh: Diskusi kelompok, latihan soal, presentasi, games..."
+            style="resize:none"></textarea>
+        </div>
+
+        <!-- Kehadiran -->
+        <div class="form-field">
+          <label class="form-label">Kehadiran Siswa</label>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:4px">
+            <div style="text-align:center">
+              <div style="font-size:11px;font-weight:700;color:#2E7D32;margin-bottom:4px">✅ Hadir</div>
+              <input type="number" id="jr-h" class="form-input" min="0" value="0" style="padding:7px;text-align:center"/>
+            </div>
+            <div style="text-align:center">
+              <div style="font-size:11px;font-weight:700;color:#F57F17;margin-bottom:4px">📋 Izin</div>
+              <input type="number" id="jr-i" class="form-input" min="0" value="0" style="padding:7px;text-align:center"/>
+            </div>
+            <div style="text-align:center">
+              <div style="font-size:11px;font-weight:700;color:#1565C0;margin-bottom:4px">🤒 Sakit</div>
+              <input type="number" id="jr-s" class="form-input" min="0" value="0" style="padding:7px;text-align:center"/>
+            </div>
+            <div style="text-align:center">
+              <div style="font-size:11px;font-weight:700;color:#C62828;margin-bottom:4px">❌ Alpha</div>
+              <input type="number" id="jr-a" class="form-input" min="0" value="0" style="padding:7px;text-align:center"/>
+            </div>
+          </div>
+        </div>
+
+        <!-- Refleksi: dropdown + manual -->
+        <div class="form-field">
+          <label class="form-label">Refleksi Pembelajaran</label>
+          <select id="jr-refleksi" class="form-select" onchange="jurnalToggleRefleksi('jr')">
+            <option value="">-- Pilih opsi atau tulis manual --</option>
+            <option>😊 Pembelajaran berjalan baik, siswa aktif dan antusias</option>
+            <option>✅ Semua tujuan pembelajaran tercapai</option>
+            <option>📈 Perlu peningkatan metode mengajar</option>
+            <option>🔄 Materi perlu diulang di pertemuan berikutnya</option>
+            <option>⚠️ Banyak siswa belum memahami materi</option>
+            <option>🎯 Sebagian besar siswa sudah paham, perlu pengayaan</option>
+            <option>📝 Perlu perbaikan soal evaluasi</option>
+            <option value="__manual__">✏️ Tulis refleksi sendiri...</option>
+          </select>
+          <textarea id="jr-refleksi-manual" class="form-input" rows="2"
+            placeholder="Tulis refleksi pembelajaran Anda di sini..."
+            style="resize:none;margin-top:8px;display:none"></textarea>
+        </div>
+
+        <!-- RTL / Catatan -->
+        <div class="form-field">
+          <label class="form-label">Rencana Tindak Lanjut (RTL)</label>
+          <select id="jr-rtl-opsi" class="form-select" onchange="jurnalToggleRTL('jr')" style="margin-bottom:8px">
+            <option value="">-- Pilih opsi atau tulis manual --</option>
+            <option>Mengulang materi di pertemuan berikutnya</option>
+            <option>Memberikan tugas latihan tambahan</option>
+            <option>Memberikan bimbingan individual kepada siswa yang belum paham</option>
+            <option>Menggunakan media pembelajaran yang lebih menarik</option>
+            <option>Melakukan variasi metode mengajar</option>
+            <option>Koordinasi dengan orang tua siswa yang bermasalah</option>
+            <option>Melanjutkan ke materi berikutnya</option>
+            <option value="__manual__">✏️ Tulis RTL sendiri...</option>
+          </select>
+          <textarea id="jr-catatan" class="form-input" rows="2"
+            placeholder="Tulis rencana tindak lanjut secara detail..."
+            style="resize:none"></textarea>
+        </div>
+
+        <button class="btn-green" onclick="jurnalSimpan()">💾 Simpan Jurnal</button>
       </div>
     </div>
 
-    <!-- Toolbar -->
-    <div style="display:flex;gap:8px;margin-bottom:12px">
-      <button onclick="jurnalExport()" style="flex:1;padding:10px;background:#E3F2FD;color:#1565C0;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer">⬇ Export Excel</button>
-      <button onclick="jurnalHapusSemua()" style="padding:10px 14px;background:#FFEBEE;color:#C62828;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer">🗑 Hapus Semua</button>
+    <!-- ===== TAB: RIWAYAT ===== -->
+    <div id="jr-tab-riwayat" class="hidden">
+      <!-- Filter -->
+      <div class="card" style="margin-bottom:10px">
+        <div class="form-row">
+          <div class="form-field">
+            <label class="form-label">Kelas</label>
+            <select id="jr-filter-kelas" class="form-select" onchange="jurnalRender()">
+              <option value="">Semua Kelas</option>
+              <option>Kelas 1</option><option>Kelas 2</option><option>Kelas 3</option>
+              <option>Kelas 4</option><option>Kelas 5</option><option>Kelas 6</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label class="form-label">Mapel</label>
+            <select id="jr-filter-mapel" class="form-select" onchange="jurnalRender()">
+              <option value="">Semua Mapel</option>
+              <option>PAIBP</option><option>Pendidikan Pancasila</option>
+              <option>Bahasa Indonesia</option><option>Matematika</option>
+              <option>PJOK</option><option>Seni Rupa</option><option>IPAS</option>
+              <option>Bahasa Inggris</option><option>Mulok Bahasa Jawa</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <!-- Toolbar -->
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <button onclick="jurnalExport()" style="flex:1;padding:10px;background:#E3F2FD;color:#1565C0;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer">⬇ Export Excel</button>
+        <button onclick="jurnalHapusSemua()" style="padding:10px 14px;background:#FFEBEE;color:#C62828;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer">🗑 Hapus Semua</button>
+      </div>
+      <!-- List -->
+      <div id="jurnal-list">
+        <div class="empty-state"><div class="empty-icon">📓</div><div>Belum ada jurnal tersimpan.</div></div>
+      </div>
     </div>
 
-    <!-- List -->
-    <div id="jurnal-list">
-      <div class="empty-state"><div class="empty-icon">📓</div><div>Belum ada jurnal tersimpan.</div></div>
-    </div>
   </div>
   <div class="bottom-nav">
     <button class="nav-item" onclick="goScreen('dash')"><span class="nav-icon">🏠</span>Beranda</button>
@@ -1197,6 +1336,7 @@
     <button class="nav-item" onclick="doLogout()"><span class="nav-icon">🚪</span>Keluar</button>
   </div>
 </div>
+
 
 <!-- ===================== REKAP ABSENSI ===================== -->
 <div id="screen-rekap" class="screen">
