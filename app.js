@@ -164,12 +164,95 @@ function updateDashStats() {
 }
 
 // ===== TOAST =====
+// ============================================================
+// ==================== POPUP NOTIFIKASI ======================
+// ============================================================
+let _popupTimer = null;
+let _popupBarTimer = null;
+
+/**
+ * showPopup(msg, type, title, duration)
+ * type: 'success' | 'error' | 'warning' | 'info' | 'delete'
+ * title: opsional, auto dari type jika kosong
+ * duration: ms (default 3200)
+ */
+function showPopup(msg, type, title, duration) {
+  type     = type     || 'success';
+  duration = duration || 3200;
+
+  const defaultTitle = {
+    success: 'Berhasil!',
+    error  : 'Gagal!',
+    warning: 'Perhatian!',
+    info   : 'Informasi',
+    delete : 'Dihapus',
+  };
+  const defaultIcon = {
+    success: '✅',
+    error  : '❌',
+    warning: '⚠️',
+    info   : 'ℹ️',
+    delete : '🗑️',
+  };
+
+  title = title || defaultTitle[type] || 'Notifikasi';
+
+  const el    = document.getElementById('popup-notif');
+  const icon  = document.getElementById('popup-icon');
+  const ttl   = document.getElementById('popup-title');
+  const txt   = document.getElementById('popup-msg');
+  const bar   = document.getElementById('popup-bar');
+  if (!el) { console.warn('popup-notif not found'); return; }
+
+  // Clear timer lama
+  if (_popupTimer)    clearTimeout(_popupTimer);
+  if (_popupBarTimer) clearTimeout(_popupBarTimer);
+
+  // Atur konten
+  icon.textContent = defaultIcon[type] || '📢';
+  ttl.textContent  = title;
+  txt.textContent  = msg;
+
+  // Reset type class
+  el.className = '';
+  el.classList.add('type-' + type);
+
+  // Reset bar
+  bar.style.transition = 'none';
+  bar.style.width      = '100%';
+
+  // Tampilkan
+  el.classList.add('show');
+
+  // Animasi progress bar
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      bar.style.transition = 'width ' + duration + 'ms linear';
+      bar.style.width      = '0%';
+    });
+  });
+
+  // Auto dismiss
+  _popupTimer = setTimeout(() => popupDismiss(), duration);
+}
+
+function popupDismiss() {
+  const el = document.getElementById('popup-notif');
+  if (!el) return;
+  el.classList.remove('show');
+  if (_popupTimer)    clearTimeout(_popupTimer);
+  if (_popupBarTimer) clearTimeout(_popupBarTimer);
+}
+
+// Alias showToast → showPopup agar semua kode lama tetap jalan
 function showToast(msg, color) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.style.background = color || '#2E7D32';
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 3200);
+  // Deteksi tipe dari warna lama
+  let type = 'success';
+  if (color === '#C62828' || color === '#B71C1C') type = 'error';
+  else if (color === '#F57F17' || color === '#E65100') type = 'delete';
+  else if (color === '#1565C0' || color === '#0D47A1') type = 'info';
+  else if (color === '#E65100' || color === '#BF360C') type = 'warning';
+  showPopup(msg, type);
 }
 
 // ============================================================
@@ -675,7 +758,7 @@ function filterMenu(q) {
 }
 
 // ===== ABSENSI =====
-let importedSiswa = [];
+// importedSiswa dihapus — absensi kini langsung dari siswaMaster
 let absenData = {};
 const defaultSiswa = {
   '1':['Achmad Fauzi','Bagas Prasetyo','Citra Dewi','Dian Rahayu','Eko Santoso','Fatimah Zahra','Gilang Ramadhan','Hani Permata','Ivan Kurniawan','Jasmine Putri','Kevin Susanto','Layla Nuraini'],
@@ -685,64 +768,29 @@ const defaultSiswa = {
   '5':['Angga Permadi','Bima Sakti','Cantika Dewi','Dimas Saputra','Erini Wahyuni','Fahrul Rozi','Galih Wicaksono','Hera Puspita','Ilham Mauludi','Jihan Ramadhani','Khoirul Anwar','Lisa Amelia'],
   '6':['Mirza Fadhlan','Nisa Aulia','Okta Prayuda','Prima Kusuma','Qisthi Amira','Raihan Ardianto','Sella Novita','Teguh Prasetya','Udin Saefudin','Vella Andriani','Wira Kusuma','Yuli Rahayu'],
 };
-function absDrag(e, active) { e.preventDefault(); document.getElementById('abs-drop').classList.toggle('dragover', active); }
-function absDrop(e) { e.preventDefault(); absDrag(e, false); if (e.dataTransfer.files[0]) absHandleFile(e.dataTransfer.files[0]); }
-function absHandleFile(file) {
-  if (!file) return;
-  if (!file.name.match(/\.(xlsx|xls)$/i)) { showToast('File harus .xlsx atau .xls', '#C62828'); return; }
-  const reader = new FileReader();
-  reader.onload = function (e) {
-    try {
-      const wb = XLSX.read(e.target.result, { type: 'array' });
-      const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
-      if (!rows.length) { showToast('File kosong!', '#C62828'); return; }
-      const first = rows[0];
-      function fc(keys) { const rk = Object.keys(first).map(k => k.toLowerCase().trim()); for (const k of keys) { const i = rk.findIndex(r => r.includes(k)); if (i !== -1) return Object.keys(first)[i]; } return null; }
-      const cNo = fc(['no', '#']), cInduk = fc(['no. induk', 'no induk', 'induk', 'nis']), cNisn = fc(['nisn']), cNama = fc(['nama siswa', 'nama', 'name']), cKelas = fc(['kelas']), cJk = fc(['jenis kelamin', 'jk', 'gender']);
-      if (!cNama) { showToast('Kolom "Nama Siswa" tidak ditemukan!', '#C62828'); return; }
-      importedSiswa = rows.filter(r => r[cNama] && String(r[cNama]).trim()).map((r, i) => ({
-        no: cNo ? String(r[cNo]).trim() : String(i + 1), noInduk: cInduk ? String(r[cInduk]).trim() : '-',
-        nisn: cNisn ? String(r[cNisn]).trim() : '-', nama: String(r[cNama]).trim(),
-        kelas: cKelas ? String(r[cKelas]).trim() : '-', jk: cJk ? String(r[cJk]).trim().toUpperCase() : 'L',
-      }));
-      document.getElementById('abs-fname').textContent = '📄 ' + file.name;
-      document.getElementById('abs-fcount').textContent = importedSiswa.length + ' siswa berhasil dibaca';
-      document.getElementById('abs-info').classList.add('show');
-      showToast('✅ ' + importedSiswa.length + ' siswa berhasil diimport!', '#2E7D32');
-    } catch (err) { showToast('Gagal membaca file!', '#C62828'); }
-  };
-  reader.readAsArrayBuffer(file);
-}
-function absClear() {
-  importedSiswa = [];
-  document.getElementById('abs-file').value = '';
-  document.getElementById('abs-info').classList.remove('show');
-  document.getElementById('abs-area').innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><div>Upload Excel atau pilih kelas,<br>lalu klik <strong>Tampilkan</strong></div></div>';
-}
-function absDownloadTemplate() {
-  const wb = XLSX.utils.book_new();
-  const data = [['No', 'No. Induk', 'NISN', 'Nama Siswa', 'Kelas', 'Jenis Kelamin'], ['1', '2024001', '0012345678', 'Ahmad Fauzi', 'Kelas 4', 'L'], ['2', '2024002', '0012345679', 'Siti Rahayu', 'Kelas 4', 'P']];
-  const ws = XLSX.utils.aoa_to_sheet(data);
-  ws['!cols'] = [{ wch: 5 }, { wch: 12 }, { wch: 14 }, { wch: 24 }, { wch: 10 }, { wch: 16 }];
-  XLSX.utils.book_append_sheet(wb, ws, 'Data Siswa');
-  XLSX.writeFile(wb, 'Template_Siswa_SDN3Kalipang.xlsx');
-  showToast('⬇ Template siswa didownload!', '#1565C0');
-}
 function absLoad() {
   const kelas = document.getElementById('abs-kelas').value;
-  const tgl = document.getElementById('abs-tgl').value;
-  if (!tgl) { showToast('Pilih tanggal!', '#C62828'); return; }
-  if (!kelas) { showToast('Pilih kelas atau upload Excel!', '#C62828'); return; }
-  let list = [];
-  if (importedSiswa.length > 0) {
-    const f = importedSiswa.filter(s => s.kelas.replace(/[^0-9]/g,'')[0] === kelas);
-    list = (f.length > 0 ? f : importedSiswa).map(s => ({ ...s }));
-  } else {
+  const tgl   = document.getElementById('abs-tgl').value;
+  if (!tgl)   { showToast('Pilih tanggal terlebih dahulu!', '#C62828'); return; }
+  if (!kelas) { showToast('Pilih kelas terlebih dahulu!', '#C62828'); return; }
+
+  // Ambil dari siswaMaster (data siswa terpusat)
+  let list = siswaMaster.filter(s => s.kelas && s.kelas.replace(/[^0-9]/g,'')[0] === kelas);
+
+  if (!list.length) {
+    // Fallback ke defaultSiswa jika belum ada data di siswaMaster untuk kelas ini
     list = (defaultSiswa[kelas] || defaultSiswa['1']).map((nama, i) => ({
-      no: String(i + 1), noInduk: '202400' + String(i + 1).padStart(2, '0'),
-      nisn: '301' + String(i + 1).padStart(5, '0'), nama, jk: i % 2 === 0 ? 'L' : 'P'
+      no: String(i+1), noInduk: '202400'+String(i+1).padStart(2,'0'),
+      nisn: '301'+String(i+1).padStart(5,'0'), nama,
+      kelas: 'Kelas '+kelas, jk: i%2===0?'L':'P'
     }));
+    showToast('ℹ️ Belum ada data siswa Kelas '+kelas+' di sistem. Menggunakan data demo.', '#1565C0');
   }
+
+  // Update sub-header
+  const subEl = document.getElementById('abs-sub');
+  if (subEl) subEl.textContent = 'Kelas '+kelas+' · '+list.length+' siswa · '+new Date(tgl).toLocaleDateString('id-ID',{day:'2-digit',month:'long',year:'numeric'});
+
   absenData = {};
   list.forEach((_, i) => { absenData[i] = 'H'; });
   absRender(list, 'Kelas ' + kelas);

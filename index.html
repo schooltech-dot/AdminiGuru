@@ -153,37 +153,14 @@
       <button class="back-btn" onclick="goScreen('dash')">←</button>
       <div>
         <div class="inner-title">Absensi Kelas</div>
-        <div class="inner-sub">SD Negeri 3 Kalipang</div>
+        <div class="inner-sub" id="abs-sub">SD Negeri 3 Kalipang</div>
       </div>
     </div>
   </div>
   <div class="inner-content">
+
     <div class="card">
-      <div class="card-title">📂 Import Data Siswa dari Excel</div>
-      <div class="upload-zone" id="abs-drop" onclick="document.getElementById('abs-file').click()" ondragover="absDrag(event,true)" ondragleave="absDrag(event,false)" ondrop="absDrop(event)">
-        <div class="upload-icon">📊</div>
-        <div class="upload-text">Klik atau seret file Excel ke sini</div>
-        <div class="upload-sub">Format: .xlsx atau .xls</div>
-      </div>
-      <input type="file" id="abs-file" style="display:none" accept=".xlsx,.xls" onchange="absHandleFile(this.files[0])" />
-      <div class="uploaded-info" id="abs-info">
-        <div><div class="uploaded-name" id="abs-fname"></div><div class="uploaded-count" id="abs-fcount"></div></div>
-        <button class="btn-clear" onclick="absClear()">✕</button>
-      </div>
-      <div class="upload-btns">
-        <button class="btn-upload-primary" onclick="document.getElementById('abs-file').click()">📂 Pilih File Excel</button>
-        <button class="btn-upload-secondary" onclick="absDownloadTemplate()">⬇ Download Template</button>
-      </div>
-      <div class="template-info">
-        <strong>Format kolom:</strong>
-        <div class="col-pills">
-          <span class="col-pill">No</span><span class="col-pill">No. Induk</span><span class="col-pill">NISN</span>
-          <span class="col-pill">Nama Siswa</span><span class="col-pill">Kelas</span><span class="col-pill">Jenis Kelamin</span>
-        </div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="form-row" style="margin-bottom:10px">
+      <div class="form-row">
         <div>
           <label class="form-label">Tanggal <span class="req">*</span></label>
           <input type="date" id="abs-tgl" class="form-input" />
@@ -201,11 +178,16 @@
           </select>
         </div>
       </div>
-      <button class="btn-green" onclick="absLoad()">Tampilkan Daftar Siswa</button>
+      <button class="btn-green" onclick="absLoad()">📋 Tampilkan Daftar Siswa</button>
     </div>
+
     <div id="abs-area">
-      <div class="empty-state"><div class="empty-icon">📋</div><div>Upload Excel atau pilih kelas,<br>lalu klik <strong>Tampilkan</strong></div></div>
+      <div class="empty-state">
+        <div class="empty-icon">📋</div>
+        <div>Pilih tanggal dan kelas,<br>lalu klik <strong>Tampilkan Daftar Siswa</strong></div>
+      </div>
     </div>
+
   </div>
   <div class="bottom-nav">
     <button class="nav-item" onclick="goScreen('dash')"><span class="nav-icon">🏠</span>Beranda</button>
@@ -2341,7 +2323,22 @@
 </div>
 
 <!-- TOAST -->
-<div class="toast" id="toast"></div>
+<!-- ===== POPUP NOTIFIKASI ===== -->
+<div id="popup-notif" onclick="popupDismiss()">
+  <div id="popup-box">
+    <div id="popup-icon-wrap">
+      <span id="popup-icon">✅</span>
+    </div>
+    <div id="popup-body">
+      <div id="popup-title">Berhasil!</div>
+      <div id="popup-msg">Data berhasil disimpan.</div>
+    </div>
+    <button id="popup-close" onclick="event.stopPropagation();popupDismiss()">✕</button>
+  </div>
+  <div id="popup-bar-wrap">
+    <div id="popup-bar"></div>
+  </div>
+</div>
 
 <!-- ===================== DASHBOARD KEPALA SEKOLAH ===================== -->
 <div id="screen-kepsek" class="screen">
