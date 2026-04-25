@@ -850,15 +850,3 @@ body { font-family: 'Segoe UI', Arial, sans-serif; background: #F5F5F5; color: #
 }
 .perpus-act-btn.edit { background: #E8F5E9; }
 .perpus-act-btn.del  { background: #FFEBEE; }
-
-/* Perpustakaan — tambahan klasifikasi kelas */
-.perpus-group-title {
-  font-size: 13px; font-weight: 800;
-  color: #212121; background: #F5F5F5;
-  border-radius: 10px; padding: 7px 14px;
-  margin: 4px 0 12px; display: flex;
-  align-items: center; gap: 6px;
-}
-.perpus-kelas-block { margin-bottom: 20px; }
-.perpus-type-badge.pjok  { background: #E3F2FD; color: #0D47A1; }
-.perpus-type-badge.paibp { background: #E8F5E9; color: #1B5E20; }

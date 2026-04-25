@@ -1849,15 +1849,15 @@ function siswaDownloadExcel() {
 
 // BAB defaults per mapel
 const defaultBabs = {
-  'PAIBP': ['Al Qur\'an Pedoman Hidupku','Kasih Sayang terhadap Sesama','Aku Suka Berterima Kasih dan Disiplin','Membiasakan Hidup Bersih','Nabi Adam a.s. Manusia Pertama','BAB 6','BAB 7','BAB 8'],
-  'Pendidikan Pancasila': ['Pancasila Dasar Negaraku','Norma & Aturan','Hak dan Kewajiban','Bhinneka Tunggal Ika','NKRI','BAB 6','BAB 7','BAB 8'],
-  'Bahasa Indonesia': ['Teks Narasi','Teks Deskripsi','Teks Eksposisi','Membaca & Menulis','Puisi & Sastra','BAB 6','BAB 7','BAB 8'],
-  'Matematika': ['Bilangan Cacah','Geometri & Pengukuran','Pecahan','Statistika','Aljabar Dasar','BAB 6','BAB 7','BAB 8'],
-  'PJOK': ['Aktivitas Gerak','Permainan Bola Besar','Permainan Bola Kecil','Atletik','Kebugaran Jasmani','BAB 6','BAB 7','BAB 8'],
-  'Seni Rupa': ['Menggambar','Mewarnai','Kolase & Mozaik','Seni Budaya Lokal','Apresiasi Karya Seni','BAB 6','BAB 7','BAB 8'],
-  'IPAS': ['Makhluk Hidup','Materi & Perubahannya','Bumi & Antariksa','Listrik & Energi','Teknologi & Masyarakat','BAB 6','BAB 7','BAB 8'],
-  'Bahasa Inggris': ['Greetings & Introduction','Things Around Us','My Family','Daily Activities','Animals & Nature','BAB 6','BAB 7','BAB 8'],
-  'Mulok Bahasa Jawa': ['Aksara Jawa','Tembang Macapat','Cerita Rakyat','Unggah-Ungguh Basa','Pranatacara','BAB 6','BAB 7','BAB 8'],
+  'PAIBP': ['Al Qur\'an Pedoman Hidupku','Kasih Sayang terhadap Sesama','Aku Suka Berterima Kasih dan Disiplin','Membiasakan Hidup Bersih','Nabi Adam a.s. Manusia Pertama','BAB 6','BAB 7','BAB 8','BAB 9','BAB 10'],
+  'Pendidikan Pancasila': ['Pancasila Dasar Negaraku','Norma & Aturan','Hak dan Kewajiban','Bhinneka Tunggal Ika','NKRI','BAB 6','BAB 7','BAB 8','BAB 9','BAB 10'],
+  'Bahasa Indonesia': ['Teks Narasi','Teks Deskripsi','Teks Eksposisi','Membaca & Menulis','Puisi & Sastra','BAB 6','BAB 7','BAB 8','BAB 9','BAB 10'],
+  'Matematika': ['Bilangan Cacah','Geometri & Pengukuran','Pecahan','Statistika','Aljabar Dasar','BAB 6','BAB 7','BAB 8','BAB 9','BAB 10'],
+  'PJOK': ['Aktivitas Gerak','Permainan Bola Besar','Permainan Bola Kecil','Atletik','Kebugaran Jasmani','BAB 6','BAB 7','BAB 8','BAB 9','BAB 10'],
+  'Seni Rupa': ['Menggambar','Mewarnai','Kolase & Mozaik','Seni Budaya Lokal','Apresiasi Karya Seni','BAB 6','BAB 7','BAB 8','BAB 9','BAB 10'],
+  'IPAS': ['Makhluk Hidup','Materi & Perubahannya','Bumi & Antariksa','Listrik & Energi','Teknologi & Masyarakat','BAB 6','BAB 7','BAB 8','BAB 9','BAB 10'],
+  'Bahasa Inggris': ['Greetings & Introduction','Things Around Us','My Family','Daily Activities','Animals & Nature','BAB 6','BAB 7','BAB 8','BAB 9','BAB 10'],
+  'Mulok Bahasa Jawa': ['Aksara Jawa','Tembang Macapat','Cerita Rakyat','Unggah-Ungguh Basa','Pranatacara','BAB 6','BAB 7','BAB 8','BAB 9','BAB 10'],
 };
 
 let nilaiCfg = {
@@ -1890,7 +1890,7 @@ function nilaiUpdateBabInputs() {
   const mapel = document.getElementById('n-mapel').value;
   const babs = defaultBabs[mapel] || [];
   const wrap = document.getElementById('bab-inputs-wrap');
-  wrap.innerHTML = Array.from({length:8}, (_,i) => `
+  wrap.innerHTML = Array.from({length:10}, (_,i) => `
     <div class="setup-bab-row" style="${i>=nBab?'display:none':''}">
       <div class="setup-bab-num">${i+1}</div>
       <input class="setup-bab-input bab-name-input" type="text" placeholder="Nama BAB ${i+1}..." value="${babs[i]||'BAB '+(i+1)}" />
