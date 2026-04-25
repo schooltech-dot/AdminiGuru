@@ -35,7 +35,7 @@
       </div>
     </div>
     <button class="btn-login" onclick="doLogin()">Masuk →</button>
-    <div class="login-footer">Copyright © 2026 — SD Negeri 3 Kalipang<br><span style="font-size:10px;opacity:0.7">Hubungi administrator untuk informasi akun.</span></div>
+    <div class="login-footer">Copyright © 2026 — SD Negeri 3 Kalipang<br><span style="font-size:10px;opacity:0.7">Akun default: guru1 / guru123 &nbsp;|&nbsp; kepsek / kepsek123</span></div>
   </div>
 </div>
 
@@ -228,12 +228,15 @@
   </div>
   <div class="inner-content">
 
-    <!-- Tab Buttons -->
+    <!-- Tab Buttons (hanya muncul untuk admin/kepsek) -->
     <div class="tab-row">
       <button class="tab-btn active"  onclick="guruTab('tambah',this)">➕ Tambah</button>
       <button class="tab-btn"         onclick="guruTab('daftar',this)">👥 Daftar</button>
       <button class="tab-btn"         onclick="guruTab('kepsek',this)">🏫 Kepala Sekolah</button>
     </div>
+
+    <!-- ===== PANEL ADMIN/KEPSEK ===== -->
+    <div id="guru-panel-admin">
 
     <!-- ===== TAB: TAMBAH GURU ===== -->
     <div id="guru-tab-tambah">
@@ -360,7 +363,14 @@
 
     </div>
 
+  </div><!-- end guru-panel-admin -->
+
+  <!-- ===== PANEL PRIBADI GURU (non-admin) ===== -->
+  <div id="guru-panel-pribadi" style="display:none">
+    <div id="guru-pribadi-content"></div>
   </div>
+
+  </div><!-- end inner-content -->
   <div class="bottom-nav">
     <button class="nav-item" onclick="goScreen('dash')"><span class="nav-icon">🏠</span>Beranda</button>
     <button class="nav-item" onclick="goScreen('absensi')"><span class="nav-icon">✅</span>Absensi</button>
@@ -368,8 +378,6 @@
     <button class="nav-item" onclick="doLogout()"><span class="nav-icon">🚪</span>Keluar</button>
   </div>
 </div>
-
-<!-- ===================== GAME EDUKASI ===================== -->
 <div id="screen-game" class="screen">
   <div class="inner-header game-banner">
     <div class="inner-topbar">
@@ -677,7 +685,7 @@
             <span class="col-pill">Tempat Lahir</span>
             <span class="col-pill">Tanggal Lahir</span>
             <span class="col-pill">Alamat</span>
-            <span class="col-pill">Nama Ortu</span>
+            <span class="col-pill">Nama Ayah</span><span class="col-pill">Nama Ibu</span>
             <span class="col-pill">No HP</span>
           </div>
         </div>
@@ -739,13 +747,17 @@
         </div>
         <div class="form-row">
           <div class="form-field">
-            <label class="form-label">Nama Orang Tua / Wali</label>
-            <input type="text" id="s-ortu" class="form-input" placeholder="Nama orang tua..." />
+            <label class="form-label">Nama Ayah</label>
+            <input type="text" id="s-ayah" class="form-input" placeholder="Nama ayah kandung..." />
           </div>
           <div class="form-field">
-            <label class="form-label">No. HP Orang Tua</label>
-            <input type="text" id="s-hp" class="form-input" placeholder="08xx-xxxx-xxxx" />
+            <label class="form-label">Nama Ibu</label>
+            <input type="text" id="s-ibu" class="form-input" placeholder="Nama ibu kandung..." />
           </div>
+        </div>
+        <div class="form-field">
+          <label class="form-label">No. HP Orang Tua</label>
+          <input type="text" id="s-hp" class="form-input" placeholder="08xx-xxxx-xxxx" />
         </div>
         <button class="btn-green" onclick="siswaTambah()">➕ Simpan Data Siswa</button>
       </div>
@@ -1403,7 +1415,7 @@
   <div class="inner-content">
 
     <div style="background:#E3F2FD;border-radius:12px;padding:12px 14px;font-size:12px;color:#0D47A1;margin-bottom:14px;">
-      🖨️ Semua dokumen akan dibuka sebagai <strong>pratinjau cetak A4</strong> lengkap dengan kop surat sekolah. Pilih "Cetak / Simpan PDF" di jendela pratinjau.
+      💡 Pilih dokumen yang ingin dicetak atau diexport. Pastikan data sudah lengkap terisi terlebih dahulu.
     </div>
 
     <div class="card-title" style="margin-bottom:10px">📋 Dokumen Siswa & Kelas</div>
@@ -1412,7 +1424,7 @@
       <div class="cetak-opt-icon" style="background:#E8F5E9">✅</div>
       <div class="cetak-opt-info">
         <div class="cetak-opt-title">Daftar Absensi Kelas</div>
-        <div class="cetak-opt-desc">Pratinjau A4 rekap kehadiran semua kelas + kop surat sekolah</div>
+        <div class="cetak-opt-desc">Cetak lembar absensi kosong atau rekap kehadiran per kelas</div>
       </div>
       <div class="cetak-opt-arrow">›</div>
     </div>
@@ -1421,7 +1433,7 @@
       <div class="cetak-opt-icon" style="background:#E3F2FD">👥</div>
       <div class="cetak-opt-info">
         <div class="cetak-opt-title">Data Siswa per Kelas</div>
-        <div class="cetak-opt-desc">Pratinjau A4 daftar siswa lengkap + kop surat siap cetak</div>
+        <div class="cetak-opt-desc">Export daftar siswa lengkap ke Excel per kelas</div>
       </div>
       <div class="cetak-opt-arrow">›</div>
     </div>
@@ -1430,7 +1442,7 @@
       <div class="cetak-opt-icon" style="background:#FFF8E1">🏫</div>
       <div class="cetak-opt-info">
         <div class="cetak-opt-title">Rekap Data Kelas</div>
-        <div class="cetak-opt-desc">Pratinjau A4 jumlah siswa per rombel (L/P/Total) + kop surat</div>
+        <div class="cetak-opt-desc">Export jumlah siswa per rombel (L/P/Jml) ke Excel</div>
       </div>
       <div class="cetak-opt-arrow">›</div>
     </div>
@@ -1470,7 +1482,7 @@
       <div class="cetak-opt-icon" style="background:#E8F5E9">👨‍🏫</div>
       <div class="cetak-opt-info">
         <div class="cetak-opt-title">Data Guru</div>
-        <div class="cetak-opt-desc">Pratinjau A4 daftar guru & jabatan + kop surat siap cetak</div>
+        <div class="cetak-opt-desc">Export daftar guru & wali kelas ke Excel</div>
       </div>
       <div class="cetak-opt-arrow">›</div>
     </div>
@@ -2091,7 +2103,7 @@
         <div class="card-title">👥 Daftar Akun Pengguna</div>
         <div id="akun-list" style="margin-bottom:10px"></div>
         <div style="font-size:11px;color:#9E9E9E;margin-bottom:4px">
-          💡 Kelola akun di bawah ini. Hubungi admin untuk reset password.
+          💡 Default: admin/admin123 · kepsek/kepsek123 · guru1/guru123
         </div>
       </div>
 

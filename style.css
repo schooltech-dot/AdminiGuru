@@ -806,11 +806,11 @@ body { font-family: 'Segoe UI', Arial, sans-serif; background: #F5F5F5; color: #
   width: 140px; flex-shrink: 0;
   background: #fff; border-radius: 14px;
   box-shadow: 0 2px 10px rgba(0,0,0,0.09);
-  overflow: hidden; position: relative;
+  overflow: hidden;
   border: 1.5px solid transparent;
   transition: all 0.15s; cursor: pointer;
 }
-.perpus-card:hover { border-color: #A5D6A7; transform: translateY(-2px); }
+.perpus-card:active { border-color: #A5D6A7; transform: scale(0.98); }
 .perpus-card-body { padding: 8px 10px 10px; }
 .perpus-card-judul {
   font-size: 12px; font-weight: 700; color: #212121;
@@ -837,24 +837,38 @@ body { font-family: 'Segoe UI', Arial, sans-serif; background: #F5F5F5; color: #
 
 /* Edit/hapus buttons di card */
 .perpus-card-actions {
-  position: absolute; top: 6px; right: 6px;
-  display: flex; gap: 4px; opacity: 0;
-  transition: opacity 0.15s;
+  display: flex; gap: 4px;
+  padding: 0 8px 8px;
+  justify-content: flex-end;
 }
-.perpus-card:hover .perpus-card-actions { opacity: 1; }
 .perpus-act-btn {
-  border: none; border-radius: 8px; width: 28px; height: 28px;
-  font-size: 12px; cursor: pointer; display: flex;
-  align-items: center; justify-content: center;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+  border: none; border-radius: 8px;
+  padding: 4px 10px; font-size: 11px; font-weight: 700;
+  cursor: pointer; display: flex; align-items: center;
+  gap: 3px; box-shadow: 0 1px 4px rgba(0,0,0,0.1);
 }
-.perpus-act-btn.edit { background: #E8F5E9; }
-.perpus-act-btn.del  { background: #FFEBEE; }
+.perpus-act-btn.edit { background: #E8F5E9; color: #2E7D32; }
+.perpus-act-btn.del  { background: #FFEBEE; color: #C62828; }
 
-/* ===== SESSION TIMEOUT INDICATOR ===== */
-.session-bar {
-  position: fixed; top: 0; left: 0; right: 0; height: 3px;
-  background: #E8F5E9; z-index: 9998;
-  transition: background 1s;
+/* Perpustakaan — tambahan klasifikasi kelas */
+.perpus-group-title {
+  font-size: 13px; font-weight: 800;
+  color: #212121; background: #F5F5F5;
+  border-radius: 10px; padding: 7px 14px;
+  margin: 4px 0 12px; display: flex;
+  align-items: center; gap: 6px;
 }
-.session-bar.warn { background: #FF8F00; }
+.perpus-kelas-block { margin-bottom: 20px; }
+.perpus-type-badge.pjok  { background: #E3F2FD; color: #0D47A1; }
+.perpus-type-badge.paibp { background: #E8F5E9; color: #1B5E20; }
+
+/* ===== Guru Panel Pribadi ===== */
+.guru-info-row {
+  display: flex; justify-content: space-between;
+  align-items: center; padding: 9px 0;
+  border-bottom: 1px solid #F5F5F5;
+  font-size: 13px;
+}
+.guru-info-row:last-child { border-bottom: none; }
+.guru-info-lbl { color: #9E9E9E; font-weight: 600; font-size: 12px; }
+.guru-info-val { color: #212121; font-weight: 700; text-align: right; }
