@@ -872,3 +872,76 @@ body { font-family: 'Segoe UI', Arial, sans-serif; background: #F5F5F5; color: #
 .guru-info-row:last-child { border-bottom: none; }
 .guru-info-lbl { color: #9E9E9E; font-weight: 600; font-size: 12px; }
 .guru-info-val { color: #212121; font-weight: 700; text-align: right; }
+
+/* ===== NOTIFIKASI / PENGUMUMAN ===== */
+.notif-filter-btn {
+  padding: 7px 14px; border: 1.5px solid #E0E0E0;
+  border-radius: 20px; font-size: 12px; font-weight: 700;
+  background: #fff; color: #757575; cursor: pointer; white-space: nowrap;
+}
+.notif-filter-btn.active { background: #E8F5E9; color: #1B5E20; border-color: #A5D6A7; }
+.notif-card {
+  background: #fff; border-radius: 14px; padding: 14px 16px;
+  margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  border-left: 4px solid #E0E0E0; position: relative;
+}
+.notif-card.unread { border-left-color: #43A047; background: #FAFFFE; }
+.notif-card.penting { border-left-color: #C62828; }
+.notif-card.kegiatan { border-left-color: #F57F17; }
+.notif-card.akademik { border-left-color: #1565C0; }
+.notif-card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.notif-card-judul { font-size: 13px; font-weight: 800; color: #212121; flex: 1; }
+.notif-card-badge { font-size: 10px; padding: 2px 7px; border-radius: 10px; background: #F5F5F5; color: #757575; white-space: nowrap; }
+.notif-card-isi { font-size: 12px; color: #616161; margin: 6px 0 8px; line-height: 1.6; }
+.notif-card-meta { font-size: 11px; color: #BDBDBD; display: flex; justify-content: space-between; }
+.notif-card-actions { display: flex; gap: 6px; margin-top: 8px; }
+
+/* ===== DARK MODE ===== */
+body.dark-mode {
+  background: #121212 !important;
+  color: #E0E0E0 !important;
+}
+body.dark-mode .screen { background: #121212; }
+body.dark-mode .card,
+body.dark-mode .rekap-list-wrap,
+body.dark-mode .notif-card,
+body.dark-mode .rk-kelas-card,
+body.dark-mode .rk-siswa-card {
+  background: #1E1E1E !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4) !important;
+}
+body.dark-mode .form-input,
+body.dark-mode .form-select {
+  background: #2A2A2A !important;
+  color: #E0E0E0 !important;
+  border-color: #424242 !important;
+}
+body.dark-mode .inner-header,
+body.dark-mode .login-card,
+body.dark-mode .bottom-nav {
+  background: #1A1A1A !important;
+  border-color: #333 !important;
+}
+body.dark-mode .inner-title,
+body.dark-mode .card-title,
+body.dark-mode .rk-kelas-name,
+body.dark-mode .notif-card-judul {
+  color: #E0E0E0 !important;
+}
+body.dark-mode .inner-sub,
+body.dark-mode .form-label,
+body.dark-mode .notif-card-isi {
+  color: #9E9E9E !important;
+}
+body.dark-mode .menu-item { background: #1E1E1E; }
+body.dark-mode .menu-label { color: #BDBDBD; }
+body.dark-mode .nav-item { color: #757575; }
+body.dark-mode .nav-item.active { color: #66BB6A; }
+body.dark-mode .rekap-sum-card,
+body.dark-mode .rk-kelas-stat {
+  background: #2A2A2A !important;
+}
+body.dark-mode .setting-row { border-color: #333 !important; }
+body.dark-mode .setting-section-title { color: #BDBDBD !important; }
+body.dark-mode .sr-label { color: #E0E0E0 !important; }
+body.dark-mode .sr-sub { color: #757575 !important; }

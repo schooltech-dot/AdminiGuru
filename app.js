@@ -107,6 +107,7 @@ function goScreen(id) {
   if (id === 'ujian')      ujianRefreshKelola();
   if (id === 'jadwal')     jadwalRender();
   if (id === 'pengaturan') pengaturanLoad();
+  if (id === 'notifikasi') notifLoad();
   if (id === 'kelas')      kelasLoad();
   if (id === 'guru')       { guruScreenLoad(); }
   if (id === 'materi')     { materiInit(); materiLoad(); }
@@ -4355,3 +4356,326 @@ function cetakDataGuru() {
   XLSX.writeFile(wb, 'DataGuru_SDN3Kalipang.xlsx');
   showToast('✅ Data guru diexport!','#2E7D32');
 }
+
+
+// ============================================================
+// ==================== NOTIFIKASI / PENGUMUMAN ===============
+// ============================================================
+let notifData = LS.get('notif_data', []);
+let notifFilterActive = 'semua';
+
+function notifLoad() {
+  // Tampilkan tombol tambah hanya untuk admin/kepsek
+  const role = sessionUser?.role;
+  const btnTambah = document.getElementById('notif-btn-tambah');
+  if (btnTambah) btnTambah.style.display = (role === 'admin' || role === 'kepsek') ? 'block' : 'none';
+
+  // Tandai notif telah dibaca
+  const lastRead = LS.get('notif_last_read', 0);
+  const newLastRead = notifData.length > 0 ? Math.max(...notifData.map(n => n.ts || 0)) : 0;
+  LS.set('notif_last_read', newLastRead);
+  notifUpdateBadge();
+  notifRender();
+}
+
+function notifRender() {
+  const el = document.getElementById('notif-list');
+  if (!el) return;
+  const lastRead = LS.get('notif_last_read', 0);
+
+  let list = [...notifData].sort((a, b) => (b.ts || 0) - (a.ts || 0));
+  if (notifFilterActive !== 'semua') list = list.filter(n => n.kategori === notifFilterActive);
+
+  if (!list.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">🔔</div><div>${notifFilterActive === 'semua' ? 'Belum ada pengumuman' : 'Tidak ada pengumuman kategori ini'}</div></div>`;
+    return;
+  }
+
+  const katLabel = { umum: '📢 Umum', akademik: '📚 Akademik', kegiatan: '🎉 Kegiatan', penting: '🔴 Penting' };
+  const role = sessionUser?.role;
+  const canEdit = role === 'admin' || role === 'kepsek';
+
+  el.innerHTML = list.map(n => {
+    const isUnread = (n.ts || 0) > (LS.get('notif_last_read_prev', 0) || 0);
+    const tgl = new Date(n.ts || Date.now()).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    return `<div class="notif-card ${n.kategori} ${isUnread ? 'unread' : ''}">
+      <div class="notif-card-head">
+        <div class="notif-card-judul">${n.judul}</div>
+        <div class="notif-card-badge" style="background:${n.kategori==='penting'?'#FFEBEE':n.kategori==='kegiatan'?'#FFF3E0':n.kategori==='akademik'?'#E3F2FD':'#F5F5F5'};color:${n.kategori==='penting'?'#C62828':n.kategori==='kegiatan'?'#E65100':n.kategori==='akademik'?'#1565C0':'#757575'}">${katLabel[n.kategori]||'📢 Umum'}</div>
+      </div>
+      <div class="notif-card-isi">${n.isi}</div>
+      <div class="notif-card-meta">
+        <span>👤 ${n.penulis || '—'} · ${n.target==='semua'?'Semua Guru':n.target||'Semua Guru'}</span>
+        <span>${tgl}</span>
+      </div>
+      ${canEdit ? `<div class="notif-card-actions">
+        <button onclick="notifEdit('${n.id}')" style="padding:5px 10px;background:#E3F2FD;color:#1565C0;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer">✏️ Edit</button>
+        <button onclick="notifHapus('${n.id}')" style="padding:5px 10px;background:#FFEBEE;color:#C62828;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer">🗑 Hapus</button>
+      </div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function notifFilter(cat, btn) {
+  notifFilterActive = cat;
+  document.querySelectorAll('.notif-filter-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  notifRender();
+}
+
+function notifShowForm(reset = true) {
+  const wrap = document.getElementById('notif-form-wrap');
+  if (wrap) wrap.style.display = 'block';
+  if (reset) {
+    document.getElementById('notif-edit-id').value = '';
+    document.getElementById('notif-judul').value = '';
+    document.getElementById('notif-isi').value = '';
+    document.getElementById('notif-kategori').value = 'umum';
+    document.getElementById('notif-target').value = 'semua';
+    document.getElementById('notif-form-title').textContent = '📢 Buat Pengumuman Baru';
+  }
+  document.getElementById('notif-judul').focus();
+}
+
+function notifHideForm() {
+  const wrap = document.getElementById('notif-form-wrap');
+  if (wrap) wrap.style.display = 'none';
+}
+
+function notifSimpan() {
+  const judul = document.getElementById('notif-judul').value.trim();
+  const isi = document.getElementById('notif-isi').value.trim();
+  const kategori = document.getElementById('notif-kategori').value;
+  const target = document.getElementById('notif-target').value;
+  const editId = document.getElementById('notif-edit-id').value;
+
+  if (!judul) { showToast('Judul pengumuman wajib diisi!', '#C62828'); return; }
+  if (!isi) { showToast('Isi pengumuman wajib diisi!', '#C62828'); return; }
+
+  if (editId) {
+    const idx = notifData.findIndex(n => n.id === editId);
+    if (idx >= 0) {
+      notifData[idx] = { ...notifData[idx], judul, isi, kategori, target };
+      showToast('✅ Pengumuman diperbarui!', '#2E7D32');
+    }
+  } else {
+    notifData.unshift({
+      id: 'n' + Date.now(),
+      judul, isi, kategori, target,
+      penulis: sessionUser?.nama || sessionUser?.username || '—',
+      ts: Date.now()
+    });
+    showToast('✅ Pengumuman berhasil dibuat!', '#2E7D32');
+  }
+
+  LS.set('notif_data', notifData);
+  notifHideForm();
+  notifUpdateBadge();
+  notifRender();
+}
+
+function notifEdit(id) {
+  const n = notifData.find(x => x.id === id);
+  if (!n) return;
+  document.getElementById('notif-edit-id').value = n.id;
+  document.getElementById('notif-judul').value = n.judul;
+  document.getElementById('notif-isi').value = n.isi;
+  document.getElementById('notif-kategori').value = n.kategori;
+  document.getElementById('notif-target').value = n.target;
+  document.getElementById('notif-form-title').textContent = '✏️ Edit Pengumuman';
+  notifShowForm(false);
+}
+
+function notifHapus(id) {
+  if (!confirm('Hapus pengumuman ini?')) return;
+  notifData = notifData.filter(n => n.id !== id);
+  LS.set('notif_data', notifData);
+  notifUpdateBadge();
+  notifRender();
+  showToast('🗑 Pengumuman dihapus', '#F57F17');
+}
+
+function notifUpdateBadge() {
+  const lastRead = LS.get('notif_last_read', 0);
+  const unread = notifData.filter(n => (n.ts || 0) > lastRead).length;
+  // Badge di menu dashboard
+  const badge = document.getElementById('notif-badge-menu');
+  if (badge) {
+    if (unread > 0) {
+      badge.style.display = 'flex';
+      badge.textContent = unread > 9 ? '9+' : unread;
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+}
+
+// ============================================================
+// ==================== DARK MODE =============================
+// ============================================================
+let isDarkMode = LS.get('dark_mode', false);
+
+function darkModeInit() {
+  if (isDarkMode) {
+    document.body.classList.add('dark-mode');
+    _darkModeUpdateUI(true);
+  }
+}
+
+function darkModeToggle() {
+  isDarkMode = !isDarkMode;
+  LS.set('dark_mode', isDarkMode);
+  if (isDarkMode) {
+    document.body.classList.add('dark-mode');
+  } else {
+    document.body.classList.remove('dark-mode');
+  }
+  _darkModeUpdateUI(isDarkMode);
+  showToast(isDarkMode ? '🌙 Mode Gelap aktif' : '☀️ Mode Terang aktif', isDarkMode ? '#1A237E' : '#F57F17');
+}
+
+function _darkModeUpdateUI(on) {
+  const toggle = document.getElementById('dark-mode-toggle');
+  const thumb = document.getElementById('dark-mode-thumb');
+  if (toggle) toggle.style.background = on ? '#43A047' : '#E0E0E0';
+  if (thumb) thumb.style.left = on ? '23px' : '3px';
+}
+
+// Inisialisasi dark mode saat halaman load
+darkModeInit();
+// Update badge notif saat load
+notifUpdateBadge();
+
+// ============================================================
+// ==================== EXPORT PDF RAPORT =====================
+// ============================================================
+function raportExportPDF() {
+  const nama = document.getElementById('rp-s-nama')?.textContent;
+  if (!nama || nama === '—') { showToast('Pilih siswa dulu!', '#C62828'); return; }
+
+  const noInduk  = document.getElementById('rp-s-induk')?.textContent || '-';
+  const nisn     = document.getElementById('rp-s-nisn')?.textContent || '-';
+  const kelas    = document.getElementById('rp-s-kelas')?.textContent || '-';
+  const sem      = document.getElementById('rp-s-sem')?.textContent || '-';
+  const wali     = document.getElementById('rp-s-wali')?.textContent || '-';
+  const avg      = document.getElementById('rp-avg')?.textContent || '-';
+  const pred     = document.getElementById('rp-pred')?.textContent || '-';
+  const status   = document.getElementById('rp-status')?.textContent || '-';
+  const kepsekNm = document.getElementById('rp-ttd-name')?.textContent || '-';
+  const kota     = document.getElementById('rp-ttd-kota')?.textContent || '-';
+  const namaSekolah = document.getElementById('rp-nama-sekolah')?.textContent || 'SD Negeri 3 Kalipang';
+  const tapel    = document.getElementById('rp-tahun-label')?.textContent || '';
+
+  // Kumpulkan rows nilai dari DOM
+  const nilaiRows = [];
+  document.querySelectorAll('.raport-mapel-row').forEach((row, i) => {
+    const cols = row.querySelectorAll('div');
+    if (cols.length >= 5) {
+      const mapel = cols[1]?.textContent?.trim().replace(/\(demo\)/gi,'').trim() || '-';
+      const nilai = cols[3]?.textContent?.trim() || '-';
+      const predikat = cols[4]?.textContent?.trim() || '-';
+      nilaiRows.push({ no: i+1, mapel, nilai, predikat });
+    }
+  });
+
+  const predColor = parseInt(avg) >= 90 ? '#1B5E20' : parseInt(avg) >= 75 ? '#1565C0' : parseInt(avg) >= 60 ? '#E65100' : '#C62828';
+
+  const tableRows = nilaiRows.map(r => `
+    <tr>
+      <td style="text-align:center">${r.no}</td>
+      <td>${r.mapel}</td>
+      <td style="text-align:center;font-weight:700">${r.nilai}</td>
+      <td style="text-align:center;font-weight:700">${r.predikat}</td>
+    </tr>`).join('');
+
+  const w = window.open('', '_blank');
+  w.document.write(`<!DOCTYPE html>
+<html lang="id"><head><meta charset="UTF-8">
+<title>Raport ${nama} — ${kelas}</title>
+<style>
+  @page { size: A4; margin: 20mm 15mm; }
+  body { font-family: 'Times New Roman', serif; font-size: 12px; color: #111; }
+  .header { text-align: center; border-bottom: 3px double #111; padding-bottom: 10px; margin-bottom: 16px; }
+  .header h2 { margin: 4px 0; font-size: 16px; text-transform: uppercase; letter-spacing: 1px; }
+  .header p { margin: 2px 0; font-size: 12px; }
+  .title-raport { text-align: center; margin: 14px 0; }
+  .title-raport h3 { font-size: 14px; text-transform: uppercase; letter-spacing: 2px; text-decoration: underline; }
+  .identitas { display: grid; grid-template-columns: 140px auto; gap: 4px 0; margin-bottom: 16px; font-size: 12px; }
+  .identitas .lbl { font-weight: normal; }
+  .identitas .val { font-weight: bold; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+  th, td { border: 1px solid #333; padding: 5px 8px; }
+  th { background: #f0f0f0; font-weight: bold; text-align: center; }
+  .summary { display: flex; gap: 20px; margin: 10px 0 20px; font-size: 13px; }
+  .sum-box { border: 1px solid #333; padding: 8px 14px; text-align: center; border-radius: 4px; }
+  .sum-num { font-size: 22px; font-weight: bold; color: ${predColor}; }
+  .ttd { display: grid; grid-template-columns: 1fr 1fr; margin-top: 30px; }
+  .ttd-box { text-align: center; }
+  .ttd-line { margin-top: 50px; border-top: 1px solid #111; padding-top: 4px; font-weight: bold; }
+  @media print { body { -webkit-print-color-adjust: exact; } }
+</style>
+</head><body>
+<div class="header">
+  <h2>${namaSekolah}</h2>
+  <p>${document.getElementById('rp-alamat-sekolah')?.textContent || 'Kalipang, Kudus, Jawa Tengah'}</p>
+</div>
+<div class="title-raport"><h3>Laporan Hasil Belajar Peserta Didik</h3><p>${tapel}</p></div>
+<div class="identitas">
+  <div class="lbl">Nama Peserta Didik</div><div class="val">: ${nama}</div>
+  <div class="lbl">No. Induk / NISN</div><div class="val">: ${noInduk} / ${nisn}</div>
+  <div class="lbl">Kelas</div><div class="val">: ${kelas}</div>
+  <div class="lbl">Semester</div><div class="val">: ${sem}</div>
+  <div class="lbl">Wali Kelas</div><div class="val">: ${wali}</div>
+</div>
+<table>
+  <thead><tr><th style="width:30px">No</th><th>Mata Pelajaran</th><th style="width:60px">Nilai</th><th style="width:70px">Predikat</th></tr></thead>
+  <tbody>${tableRows}</tbody>
+</table>
+<div class="summary">
+  <div class="sum-box"><div class="sum-num">${avg}</div><div>Rata-rata</div></div>
+  <div class="sum-box"><div class="sum-num" style="color:${predColor}">${pred}</div><div>Predikat</div></div>
+  <div class="sum-box"><div class="sum-num" style="font-size:14px;color:${parseInt(avg)>= (appConfig.kkm||70)?'#2E7D32':'#C62828'}">${status}</div><div>Status</div></div>
+</div>
+<div class="ttd">
+  <div class="ttd-box"><p>Orang Tua / Wali</p><div class="ttd-line">……………………………</div></div>
+  <div class="ttd-box"><p>${kota}</p><p>Wali Kelas / Guru</p><div class="ttd-line">${wali}</div></div>
+</div>
+<div style="margin-top:20px;text-align:right">
+  <p>Mengetahui, Kepala Sekolah</p>
+  <br><br>
+  <p style="font-weight:bold">${kepsekNm}</p>
+  <p>NIP. ${appConfig.kepsekNip || '………………………'}</p>
+</div>
+</body></html>`);
+  w.document.close();
+  setTimeout(() => w.print(), 600);
+}
+
+// ============================================================
+// ==================== PWA / SERVICE WORKER ==================
+// ============================================================
+function pwaRegisterServiceWorker() {
+  if ('serviceWorker' in navigator) {
+    // Inline service worker sebagai blob
+    const swCode = `
+const CACHE = 'sdn3-v1';
+const URLS  = ['./', './index.html', './app.js', './style.css'];
+self.addEventListener('install', e => {
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(URLS)).catch(()=>{}));
+  self.skipWaiting();
+});
+self.addEventListener('activate', e => {
+  e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));
+  self.clients.claim();
+});
+self.addEventListener('fetch', e => {
+  e.respondWith(caches.match(e.request).then(r => r || fetch(e.request).catch(() => caches.match('./index.html'))));
+});`;
+    const blob = new Blob([swCode], { type: 'application/javascript' });
+    const url  = URL.createObjectURL(blob);
+    navigator.serviceWorker.register(url).then(() => {
+      console.log('[SDN3] Service Worker registered (offline mode aktif)');
+    }).catch(err => console.warn('[SDN3] SW gagal:', err));
+  }
+}
+pwaRegisterServiceWorker();

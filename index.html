@@ -4,6 +4,12 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Sistem Informasi — SD Negeri 3 Kalipang</title>
+<meta name="theme-color" content="#2E7D32" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="SDN3 Kalipang" />
+<link rel="manifest" href="manifest.json" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link rel="stylesheet" href="style.css" />
 </head>
@@ -136,6 +142,7 @@
       <div class="menu-item" onclick="goScreen('cetak')"><span class="menu-icon">🖨️</span><span class="menu-label">Cetak Dokumen</span></div>
       <div class="menu-item" onclick="goScreen('perpustakaan')"><span class="menu-icon">📖</span><span class="menu-label">Perpustakaan</span></div>
       <div class="menu-item" onclick="goScreen('pengaturan')"><span class="menu-icon">⚙️</span><span class="menu-label">Pengaturan</span></div>
+      <div class="menu-item" onclick="goScreen('notifikasi')" style="position:relative"><span class="menu-icon">🔔</span><span class="menu-label">Pengumuman</span><span id="notif-badge-menu" style="display:none;position:absolute;top:8px;right:8px;background:#C62828;color:#fff;border-radius:50%;width:16px;height:16px;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center" id="notif-badge-menu">0</span></div>
     </div>
   </div>
   <div class="bottom-nav">
@@ -1890,8 +1897,9 @@
 
       <!-- Action buttons -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px">
-        <button class="btn-green" onclick="raportPrint()">🖨️ Cetak / PDF</button>
-        <button class="btn-blue" onclick="raportExportExcel()">⬇ Export Excel</button>
+        <button class="btn-green" onclick="raportPrint()">🖨️ Cetak</button>
+        <button onclick="raportExportPDF()" style="flex:1;padding:11px;background:#FFEBEE;color:#C62828;border:1.5px solid #EF9A9A;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer">📄 PDF</button>
+        <button class="btn-blue" onclick="raportExportExcel()">⬇ Excel</button>
       </div>
       <button onclick="goScreen('penilaian')" style="width:100%;margin-top:8px;padding:11px;background:#E8F5E9;color:#1B5E20;border:1.5px solid #A5D6A7;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">
         📊 Input / Edit Nilai di Penilaian
@@ -2118,6 +2126,22 @@
       </div>
     </div>
 
+    <!-- Tampilan & Dark Mode -->
+    <div class="setting-section" id="peng-tampilan">
+      <div class="setting-section-title">🎨 Tampilan</div>
+      <div class="setting-row" onclick="darkModeToggle()" style="cursor:pointer">
+        <div class="sr-left">
+          <div class="sr-icon" style="background:#1A237E">🌙</div>
+          <div><div class="sr-label">Mode Gelap (Dark Mode)</div><div class="sr-sub">Hemat baterai, nyaman di malam hari</div></div>
+        </div>
+        <div class="sr-right">
+          <div id="dark-mode-toggle" style="width:44px;height:24px;background:#E0E0E0;border-radius:12px;position:relative;transition:background 0.3s">
+            <div id="dark-mode-thumb" style="position:absolute;top:3px;left:3px;width:18px;height:18px;background:#fff;border-radius:50%;transition:left 0.3s;box-shadow:0 1px 3px rgba(0,0,0,0.3)"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Data Management -->
     <div class="setting-section" id="peng-data">
       <div class="setting-section-title">🗄️ Manajemen Data</div>
@@ -2139,6 +2163,83 @@
     <button class="nav-item" onclick="goScreen('dash')"><span class="nav-icon">🏠</span>Beranda</button>
     <button class="nav-item active"><span class="nav-icon">⚙️</span>Setelan</button>
     <button class="nav-item" onclick="goScreen('siswa')"><span class="nav-icon">👥</span>Siswa</button>
+    <button class="nav-item" onclick="doLogout()"><span class="nav-icon">🚪</span>Keluar</button>
+  </div>
+</div>
+
+<!-- ==================== NOTIFIKASI / PENGUMUMAN ==================== -->
+<div id="screen-notifikasi" class="screen">
+  <div class="inner-header">
+    <div class="inner-topbar">
+      <button class="back-btn" onclick="goScreen('dash')">←</button>
+      <div>
+        <div class="inner-title">🔔 Pengumuman</div>
+        <div class="inner-sub">Informasi & Pemberitahuan Sekolah</div>
+      </div>
+      <button id="notif-btn-tambah" onclick="notifShowForm()" style="display:none;background:#E8F5E9;border:1.5px solid #A5D6A7;color:#1B5E20;border-radius:10px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer">+ Buat</button>
+    </div>
+  </div>
+  <div class="inner-content">
+
+    <!-- Form Tambah Pengumuman (hanya untuk admin/kepsek) -->
+    <div id="notif-form-wrap" style="display:none;margin-bottom:14px">
+      <div class="card">
+        <div class="card-title" id="notif-form-title">📢 Buat Pengumuman Baru</div>
+        <input type="hidden" id="notif-edit-id" />
+        <div class="form-field">
+          <label class="form-label">Judul <span class="req">*</span></label>
+          <input type="text" id="notif-judul" class="form-input" placeholder="Judul pengumuman..." />
+        </div>
+        <div class="form-field">
+          <label class="form-label">Isi Pengumuman <span class="req">*</span></label>
+          <textarea id="notif-isi" class="form-input" rows="4" placeholder="Tulis isi pengumuman di sini..." style="resize:vertical;min-height:80px"></textarea>
+        </div>
+        <div class="form-row">
+          <div>
+            <label class="form-label">Kategori</label>
+            <select id="notif-kategori" class="form-select">
+              <option value="umum">📢 Umum</option>
+              <option value="akademik">📚 Akademik</option>
+              <option value="kegiatan">🎉 Kegiatan</option>
+              <option value="penting">🔴 Penting</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Ditujukan ke</label>
+            <select id="notif-target" class="form-select">
+              <option value="semua">Semua Guru</option>
+              <option value="guru">Guru Kelas</option>
+              <option value="pjok">Guru PJOK</option>
+              <option value="pai">Guru PAI</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:4px">
+          <button class="btn-green" onclick="notifSimpan()" style="flex:1">💾 Simpan Pengumuman</button>
+          <button onclick="notifHideForm()" style="flex:0;padding:10px 16px;background:#F5F5F5;border:none;border-radius:10px;font-size:13px;cursor:pointer">Batal</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filter -->
+    <div style="display:flex;gap:8px;margin-bottom:12px;overflow-x:auto;padding-bottom:4px">
+      <button class="notif-filter-btn active" id="nf-semua" onclick="notifFilter('semua',this)">Semua</button>
+      <button class="notif-filter-btn" id="nf-umum" onclick="notifFilter('umum',this)">📢 Umum</button>
+      <button class="notif-filter-btn" id="nf-akademik" onclick="notifFilter('akademik',this)">📚 Akademik</button>
+      <button class="notif-filter-btn" id="nf-kegiatan" onclick="notifFilter('kegiatan',this)">🎉 Kegiatan</button>
+      <button class="notif-filter-btn" id="nf-penting" onclick="notifFilter('penting',this)">🔴 Penting</button>
+    </div>
+
+    <!-- List pengumuman -->
+    <div id="notif-list">
+      <div class="empty-state"><div class="empty-icon">🔔</div><div>Belum ada pengumuman</div></div>
+    </div>
+
+  </div>
+  <div class="bottom-nav">
+    <button class="nav-item" onclick="goScreen('dash')"><span class="nav-icon">🏠</span>Beranda</button>
+    <button class="nav-item active"><span class="nav-icon">🔔</span>Notif</button>
+    <button class="nav-item" onclick="goScreen('pengaturan')"><span class="nav-icon">⚙️</span>Setelan</button>
     <button class="nav-item" onclick="doLogout()"><span class="nav-icon">🚪</span>Keluar</button>
   </div>
 </div>
