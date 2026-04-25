@@ -3443,114 +3443,231 @@ function rekapExport() {
 // ============================================================
 // ==================== PERPUSTAKAAN ==========================
 // ============================================================
+// Struktur: { id, judul, penulis, kategori, mapel (''/PJOK/PAIBP),
+//             kelas (''/1-6), link, coverUrl, deskripsi, addedBy, addedAt }
 const _perpusDemoDefault = [
-  { id:'p1', judul:'Buku Teks Bahasa Indonesia Kelas 4', penulis:'Kemendikbud', kategori:'Pelajaran', kelas:'4', link:'https://buku.kemdikbud.go.id', coverUrl:'', deskripsi:'Buku pelajaran Bahasa Indonesia kurikulum merdeka untuk kelas 4 SD.', addedBy:'admin', addedAt:'2026-01-10' },
-  { id:'p2', judul:'Laskar Pelangi', penulis:'Andrea Hirata', kategori:'Fiksi', kelas:'', link:'https://drive.google.com', coverUrl:'', deskripsi:'Novel tentang semangat anak-anak Belitung dalam mengejar pendidikan.', addedBy:'admin', addedAt:'2026-01-10' },
-  { id:'p3', judul:'Matematika Seru Kelas 3', penulis:'Kemendikbud', kategori:'Pelajaran', kelas:'3', link:'https://buku.kemdikbud.go.id', coverUrl:'', deskripsi:'Buku matematika interaktif kelas 3 SD.', addedBy:'guru1', addedAt:'2026-02-01' },
-  { id:'p4', judul:'Video: Tata Surya untuk SD', penulis:'Ruangguru', kategori:'Video', kelas:'5', link:'https://youtube.com', coverUrl:'', deskripsi:'Penjelasan tata surya yang menarik dan mudah dipahami siswa SD.', addedBy:'guru1', addedAt:'2026-02-14' },
-  { id:'p5', judul:'Ensiklopedia Hewan Nusantara', penulis:'LIPI', kategori:'Referensi', kelas:'', link:'https://lipi.go.id', coverUrl:'', deskripsi:'Kumpulan informasi fauna asli Indonesia.', addedBy:'admin', addedAt:'2026-03-05' },
-  { id:'p6', judul:'Portal Rumah Belajar Kemdikbud', penulis:'Kemendikbud', kategori:'Link Edukasi', kelas:'', link:'https://belajar.kemdikbud.go.id', coverUrl:'', deskripsi:'Platform belajar resmi pemerintah, berisi materi, video, dan kuis.', addedBy:'admin', addedAt:'2026-03-10' },
-  { id:'p7', judul:'Batik Nusantara — Warisan Budaya', penulis:'Museum Batik', kategori:'Seni & Budaya', kelas:'', link:'https://batik.go.id', coverUrl:'', deskripsi:'Mengenal ragam batik dari berbagai daerah di Indonesia.', addedBy:'guru1', addedAt:'2026-03-20' },
+  { id:'p1',  judul:'Buku Teks B. Indonesia Kelas 1', penulis:'Kemendikbud', kategori:'Pelajaran', mapel:'',     kelas:'1', link:'https://buku.kemdikbud.go.id', coverUrl:'', deskripsi:'Buku Bahasa Indonesia Kelas 1 Kurikulum Merdeka.', addedBy:'admin', addedAt:'2026-01-10' },
+  { id:'p2',  judul:'Matematika Kelas 1',             penulis:'Kemendikbud', kategori:'Pelajaran', mapel:'',     kelas:'1', link:'https://buku.kemdikbud.go.id', coverUrl:'', deskripsi:'Buku Matematika Kelas 1 Kurikulum Merdeka.',        addedBy:'admin', addedAt:'2026-01-10' },
+  { id:'p3',  judul:'IPAS Kelas 4',                   penulis:'Kemendikbud', kategori:'Pelajaran', mapel:'',     kelas:'4', link:'https://buku.kemdikbud.go.id', coverUrl:'', deskripsi:'Ilmu Pengetahuan Alam dan Sosial Kelas 4.',         addedBy:'admin', addedAt:'2026-01-15' },
+  { id:'p4',  judul:'Video: Sistem Tata Surya',        penulis:'Ruangguru',   kategori:'Video',     mapel:'',     kelas:'4', link:'https://youtube.com',          coverUrl:'', deskripsi:'Penjelasan tata surya untuk kelas 4 SD.',           addedBy:'guru1', addedAt:'2026-02-01' },
+  { id:'p5',  judul:'B. Indonesia Kelas 5',            penulis:'Kemendikbud', kategori:'Pelajaran', mapel:'',     kelas:'5', link:'https://buku.kemdikbud.go.id', coverUrl:'', deskripsi:'Buku Bahasa Indonesia Kelas 5.',                   addedBy:'admin', addedAt:'2026-01-15' },
+  { id:'p6',  judul:'Gerak Dasar Lokomotor',           penulis:'Kemendikbud', kategori:'Pelajaran', mapel:'PJOK', kelas:'1', link:'https://buku.kemdikbud.go.id', coverUrl:'', deskripsi:'Materi PJOK gerak dasar kelas 1.',                 addedBy:'admin', addedAt:'2026-02-10' },
+  { id:'p7',  judul:'Permainan Bola Besar',            penulis:'Kemendikbud', kategori:'Pelajaran', mapel:'PJOK', kelas:'4', link:'https://buku.kemdikbud.go.id', coverUrl:'', deskripsi:'Materi PJOK permainan bola besar kelas 4.',         addedBy:'admin', addedAt:'2026-02-10' },
+  { id:'p8',  judul:'Video: Senam Lantai',             penulis:'Guru Penjas', kategori:'Video',     mapel:'PJOK', kelas:'',  link:'https://youtube.com',          coverUrl:'', deskripsi:'Video tutorial senam lantai untuk semua kelas.',   addedBy:'guru1', addedAt:'2026-03-01' },
+  { id:'p9',  judul:'Al-Quran Hadis Kelas 1',          penulis:'Kemenag',     kategori:'Pelajaran', mapel:'PAIBP',kelas:'1', link:'https://buku.kemdikbud.go.id', coverUrl:'', deskripsi:'Buku PAI Kelas 1 Kurikulum Merdeka.',               addedBy:'admin', addedAt:'2026-02-15' },
+  { id:'p10', judul:'Akidah Akhlak Kelas 4',           penulis:'Kemenag',     kategori:'Pelajaran', mapel:'PAIBP',kelas:'4', link:'https://buku.kemdikbud.go.id', coverUrl:'', deskripsi:'Materi Akidah Akhlak kelas 4.',                     addedBy:'admin', addedAt:'2026-02-15' },
+  { id:'p11', judul:'Video: Tata Cara Sholat',         penulis:'Kemenag',     kategori:'Video',     mapel:'PAIBP',kelas:'',  link:'https://youtube.com',          coverUrl:'', deskripsi:'Panduan sholat 5 waktu untuk semua kelas.',         addedBy:'admin', addedAt:'2026-03-05' },
+  { id:'p12', judul:'Laskar Pelangi',                  penulis:'Andrea Hirata',kategori:'Fiksi',    mapel:'',     kelas:'',  link:'https://drive.google.com',     coverUrl:'', deskripsi:'Novel inspiratif tentang semangat belajar.',        addedBy:'admin', addedAt:'2026-01-20' },
+  { id:'p13', judul:'Ensiklopedia Hewan Nusantara',    penulis:'LIPI',        kategori:'Referensi', mapel:'',     kelas:'',  link:'https://lipi.go.id',           coverUrl:'', deskripsi:'Fauna asli Indonesia.',                             addedBy:'admin', addedAt:'2026-03-05' },
+  { id:'p14', judul:'Portal Rumah Belajar',            penulis:'Kemendikbud', kategori:'Link Edukasi',mapel:'',  kelas:'',  link:'https://belajar.kemdikbud.go.id',coverUrl:'',deskripsi:'Platform belajar resmi pemerintah.',               addedBy:'admin', addedAt:'2026-03-10' },
+  { id:'p15', judul:'Batik Nusantara',                 penulis:'Museum Batik',kategori:'Seni & Budaya',mapel:'', kelas:'',  link:'https://kemdikbud.go.id',      coverUrl:'', deskripsi:'Warisan budaya batik dari berbagai daerah.',        addedBy:'admin', addedAt:'2026-03-20' },
 ];
 let perpusData = LS.get('perpus_data', _perpusDemoDefault);
 
 const perpusKatIcon = {
-  'Pelajaran'   : '📚',
-  'Fiksi'       : '📖',
-  'Video'       : '🎥',
-  'Link Edukasi': '🌐',
-  'Referensi'   : '🔬',
-  'Seni & Budaya': '🎨',
+  'Pelajaran':'📚','Fiksi':'📖','Video':'🎥',
+  'Link Edukasi':'🌐','Referensi':'🔬','Seni & Budaya':'🎨',
 };
 const perpusKatColor = {
-  'Pelajaran'   : { bg:'#E8F5E9', clr:'#1B5E20' },
-  'Fiksi'       : { bg:'#FFF8E1', clr:'#E65100' },
-  'Video'       : { bg:'#FCE4EC', clr:'#880E4F' },
-  'Link Edukasi': { bg:'#E3F2FD', clr:'#0D47A1' },
-  'Referensi'   : { bg:'#EDE7F6', clr:'#4527A0' },
+  'Pelajaran'   :{ bg:'#E8F5E9', clr:'#1B5E20' },
+  'Fiksi'       :{ bg:'#FFF8E1', clr:'#E65100' },
+  'Video'       :{ bg:'#FCE4EC', clr:'#880E4F' },
+  'Link Edukasi':{ bg:'#E3F2FD', clr:'#0D47A1' },
+  'Referensi'   :{ bg:'#EDE7F6', clr:'#4527A0' },
   'Seni & Budaya':{ bg:'#FBE9E7', clr:'#BF360C' },
 };
+const perpusKlsColor = ['','#E3F2FD','#E8F5E9','#FFF8E1','#FFF3E0','#FCE4EC','#EDE7F6'];
+const perpusKlsClr   = ['','#1565C0','#2E7D32','#E65100','#E64A19','#880E4F','#4527A0'];
 
-let _perpusCurKat = '';
+let _perpusCurKat = 'semua';
 
-// ----- Tab navigation -----
+// --- Toggle hint kelas ---
+function perpusToggleKelas() {
+  const mapel  = (document.getElementById('perpus-mapel') || {}).value || '';
+  const hintEl = document.getElementById('perpus-kelas-hint');
+  if (hintEl) hintEl.textContent = mapel
+    ? '💡 Pilih kelas tertentu, atau biarkan "Semua Kelas" agar masuk semua rak ' + mapel
+    : '💡 Kosongkan jika berlaku untuk semua kelas (masuk rak Umum)';
+}
+
+// --- Tab navigation ---
 function perpusTab(tab, el) {
   ['rak','cari','tambah'].forEach(t => {
     document.getElementById('perpus-tab-' + t).classList.toggle('hidden', t !== tab);
   });
   document.querySelectorAll('#screen-perpustakaan .tab-btn').forEach(b => b.classList.remove('active'));
   if (el) el.classList.add('active');
-  if (tab === 'rak')   perpusRenderRak();
-  if (tab === 'cari')  { document.getElementById('perpus-search-input').value=''; perpusCari(''); }
-  if (tab === 'tambah') perpusBatalEdit(); // reset form
+  if (tab === 'rak')    perpusRenderRak();
+  if (tab === 'cari')   { document.getElementById('perpus-search-input').value=''; perpusCari(''); }
+  if (tab === 'tambah') perpusBatalEdit();
 }
 
-// ----- Render rak per kategori -----
+// --- Helper: render card buku ---
+function _perpusCardHtml(b) {
+  const icon = perpusKatIcon[b.kategori] || '📄';
+  const c    = perpusKatColor[b.kategori] || { bg:'#F5F5F5', clr:'#424242' };
+  const canEdit = sessionUser && (sessionUser.role==='admin'||sessionUser.role==='kepsek'||sessionUser.username===b.addedBy);
+
+  const coverHtml = b.coverUrl
+    ? `<img src="${b.coverUrl}" style="width:100%;height:90px;object-fit:cover;border-radius:10px 10px 0 0"
+         onerror="this.style.display='none';this.nextSibling.style.display='flex'"/>
+       <div style="display:none;height:90px;background:${c.bg};border-radius:10px 10px 0 0;align-items:center;justify-content:center;font-size:36px">${icon}</div>`
+    : `<div style="height:90px;background:${c.bg};border-radius:10px 10px 0 0;display:flex;align-items:center;justify-content:center;font-size:36px">${icon}</div>`;
+
+  const mapelBadge = b.mapel
+    ? `<div class="perpus-type-badge ${b.mapel==='PJOK'?'pjok':'paibp'}">${b.mapel==='PJOK'?'🏃':'📖'} ${b.mapel}</div>` : '';
+  const kelasBadge = b.kelas
+    ? `<div class="perpus-kelas-badge">Kls ${b.kelas}</div>` : '';
+
+  return `<div class="perpus-card" onclick="perpusBuka('${b.id}')">
+    ${coverHtml}
+    <div class="perpus-card-body">
+      <div class="perpus-card-judul">${b.judul}</div>
+      <div class="perpus-card-penulis">${b.penulis||'—'}</div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">${kelasBadge}${mapelBadge}</div>
+    </div>
+    ${canEdit?`<div class="perpus-card-actions">
+      <button onclick="event.stopPropagation();perpusEdit('${b.id}')" class="perpus-act-btn edit">✏️</button>
+      <button onclick="event.stopPropagation();perpusHapus('${b.id}')" class="perpus-act-btn del">🗑</button>
+    </div>`:''}
+  </div>`;
+}
+
+// --- Helper: render satu rak section ---
+function _perpusRakSection(title, icon, clr, items, groupByKelas) {
+  if (!items.length) return '';
+  let cardsHtml = '';
+  if (groupByKelas) {
+    ['1','2','3','4','5','6',''].forEach(k => {
+      const sub = items.filter(b => b.kelas === k);
+      if (!sub.length) return;
+      const kLabel = k ? 'Kelas ' + k : 'Semua Kelas';
+      const kBg  = k ? perpusKlsColor[parseInt(k)] : '#F5F5F5';
+      const kClr = k ? perpusKlsClr[parseInt(k)]   : '#616161';
+      cardsHtml += `<div style="margin-bottom:8px">
+        <div style="font-size:11px;font-weight:700;color:${kClr};background:${kBg};display:inline-block;border-radius:6px;padding:2px 9px;margin-bottom:6px">${kLabel}</div>
+        <div class="perpus-card-scroll">${sub.map(b => _perpusCardHtml(b)).join('')}</div>
+      </div>`;
+    });
+  } else {
+    cardsHtml = `<div class="perpus-card-scroll">${items.map(b => _perpusCardHtml(b)).join('')}</div>`;
+  }
+  return `<div class="perpus-rak-section">
+    <div class="perpus-rak-header">
+      <span style="font-size:18px">${icon}</span>
+      <span class="perpus-rak-title" style="color:${clr}">${title}</span>
+      <span class="perpus-rak-count">${items.length}</span>
+    </div>${cardsHtml}
+  </div>`;
+}
+
+// --- Render rak utama ---
 function perpusRenderRak() {
   const el = document.getElementById('perpus-rak-content');
   if (!el) return;
+  const kat = _perpusCurKat;
+  let html  = '';
 
-  let list = [...perpusData];
-  if (_perpusCurKat) list = list.filter(b => b.kategori === _perpusCurKat);
+  if (kat === 'semua') {
+    // Blok kelas
+    const klsItems = perpusData.filter(b => b.kelas && !b.mapel);
+    if (klsItems.length) {
+      html += `<div class="perpus-group-title">🏫 Koleksi Per Kelas</div>`;
+      ['1','2','3','4','5','6'].forEach(k => {
+        const sub = klsItems.filter(b => b.kelas === k);
+        if (!sub.length) return;
+        const bg  = perpusKlsColor[parseInt(k)];
+        const clr = perpusKlsClr[parseInt(k)];
+        const katUrutan = ['Pelajaran','Fiksi','Video','Link Edukasi','Referensi','Seni & Budaya'];
+        let subHtml = '';
+        katUrutan.forEach(kt => {
+          const s2 = sub.filter(b => b.kategori === kt);
+          if (!s2.length) return;
+          subHtml += _perpusRakSection(kt, perpusKatIcon[kt]||'📄', (perpusKatColor[kt]||{}).clr||'#424242', s2, false);
+        });
+        html += `<div class="perpus-kelas-block" style="border-left:4px solid ${clr};padding-left:10px;margin-bottom:18px">
+          <div style="font-size:13px;font-weight:800;color:${clr};background:${bg};display:inline-flex;align-items:center;gap:6px;border-radius:8px;padding:4px 12px;margin-bottom:10px">
+            <span style="font-size:16px;font-weight:800">${k}</span> Kelas ${k}
+            <span style="font-size:11px;font-weight:600;opacity:.7">${sub.length} koleksi</span>
+          </div>${subHtml}</div>`;
+      });
+    }
+    // Blok PJOK
+    const pjok = perpusData.filter(b => b.mapel === 'PJOK');
+    if (pjok.length) {
+      html += `<div class="perpus-group-title" style="background:#E3F2FD;color:#0D47A1">🏃 PJOK</div>`;
+      html += _perpusRakSection('PJOK', '🏃', '#0D47A1', pjok, true);
+    }
+    // Blok PAIBP
+    const paibp = perpusData.filter(b => b.mapel === 'PAIBP');
+    if (paibp.length) {
+      html += `<div class="perpus-group-title" style="background:#E8F5E9;color:#1B5E20">📖 PAIBP</div>`;
+      html += _perpusRakSection('PAIBP', '📖', '#1B5E20', paibp, true);
+    }
+    // Blok Umum
+    const umum = perpusData.filter(b => !b.kelas && !b.mapel);
+    if (umum.length) {
+      html += `<div class="perpus-group-title">🌐 Koleksi Umum</div>`;
+      ['Pelajaran','Fiksi','Video','Link Edukasi','Referensi','Seni & Budaya'].forEach(kt => {
+        const sub = umum.filter(b => b.kategori === kt);
+        if (!sub.length) return;
+        html += _perpusRakSection(kt, perpusKatIcon[kt]||'📄', (perpusKatColor[kt]||{}).clr||'#424242', sub, false);
+      });
+    }
+    if (!html) html = '<div class="empty-state"><div class="empty-icon">📚</div><div>Belum ada koleksi.</div></div>';
 
-  if (!list.length) {
-    el.innerHTML = '<div class="empty-state"><div class="empty-icon">📚</div><div>Belum ada koleksi' + (_perpusCurKat ? ' di kategori ini' : '') + '.</div></div>';
-    return;
+  } else if (kat.startsWith('kelas_')) {
+    const k   = kat.replace('kelas_','');
+    const clr = perpusKlsClr[parseInt(k)];
+    const bg  = perpusKlsColor[parseInt(k)];
+    const list = perpusData.filter(b => b.kelas === k && !b.mapel);
+    html += `<div class="perpus-kelas-block" style="border-left:4px solid ${clr};padding-left:10px">
+      <div style="font-size:13px;font-weight:800;color:${clr};background:${bg};display:inline-flex;align-items:center;gap:6px;border-radius:8px;padding:4px 12px;margin-bottom:10px">
+        <span style="font-size:16px;font-weight:800">${k}</span> Kelas ${k}
+        <span style="font-size:11px;font-weight:600;opacity:.7">${list.length} koleksi</span>
+      </div>`;
+    if (!list.length) {
+      html += '<div class="empty-state"><div class="empty-icon">📚</div><div>Belum ada koleksi untuk kelas ini.</div></div>';
+    } else {
+      ['Pelajaran','Fiksi','Video','Link Edukasi','Referensi','Seni & Budaya'].forEach(kt => {
+        const sub = list.filter(b => b.kategori === kt);
+        if (!sub.length) return;
+        html += _perpusRakSection(kt, perpusKatIcon[kt]||'📄', (perpusKatColor[kt]||{}).clr||'#424242', sub, false);
+      });
+    }
+    html += '</div>';
+
+  } else if (kat === 'PJOK' || kat === 'PAIBP') {
+    const icon = kat==='PJOK'?'🏃':'📖';
+    const clr  = kat==='PJOK'?'#0D47A1':'#1B5E20';
+    const bg   = kat==='PJOK'?'#E3F2FD':'#E8F5E9';
+    const list = perpusData.filter(b => b.mapel === kat);
+    html += `<div class="perpus-group-title" style="background:${bg};color:${clr}">${icon} ${kat}</div>`;
+    if (!list.length) {
+      html += `<div class="empty-state"><div class="empty-icon">${icon}</div><div>Belum ada koleksi ${kat}.</div></div>`;
+    } else {
+      ['Pelajaran','Video','Link Edukasi','Referensi'].forEach(kt => {
+        const sub = list.filter(b => b.kategori === kt);
+        if (!sub.length) return;
+        html += _perpusRakSection(kt, perpusKatIcon[kt]||'📄', (perpusKatColor[kt]||{}).clr||'#424242', sub, true);
+      });
+    }
+
+  } else if (kat === 'umum') {
+    const list = perpusData.filter(b => !b.kelas && !b.mapel);
+    html += `<div class="perpus-group-title">🌐 Koleksi Umum</div>`;
+    if (!list.length) {
+      html += '<div class="empty-state"><div class="empty-icon">🌐</div><div>Belum ada koleksi umum.</div></div>';
+    } else {
+      ['Pelajaran','Fiksi','Video','Link Edukasi','Referensi','Seni & Budaya'].forEach(kt => {
+        const sub = list.filter(b => b.kategori === kt);
+        if (!sub.length) return;
+        html += _perpusRakSection(kt, perpusKatIcon[kt]||'📄', (perpusKatColor[kt]||{}).clr||'#424242', sub, false);
+      });
+    }
   }
 
-  // Kelompokkan per kategori
-  const urutan = ['Pelajaran','Fiksi','Video','Link Edukasi','Referensi','Seni & Budaya'];
-  const grouped = {};
-  urutan.forEach(k => { grouped[k] = []; });
-  list.forEach(b => {
-    if (!grouped[b.kategori]) grouped[b.kategori] = [];
-    grouped[b.kategori].push(b);
-  });
-
-  let html = '';
-  urutan.forEach(kat => {
-    const items = grouped[kat];
-    if (!items || !items.length) return;
-    const icon  = perpusKatIcon[kat]  || '📄';
-    const clr   = (perpusKatColor[kat] || {}).clr || '#424242';
-    const bg    = (perpusKatColor[kat] || {}).bg  || '#F5F5F5';
-
-    html += `<div class="perpus-rak-section">
-      <div class="perpus-rak-header">
-        <span style="font-size:18px">${icon}</span>
-        <span class="perpus-rak-title" style="color:${clr}">${kat}</span>
-        <span class="perpus-rak-count">${items.length}</span>
-      </div>
-      <div class="perpus-card-scroll">`;
-
-    items.forEach(b => {
-      const isVideo = b.kategori === 'Video' || b.link.includes('youtube') || b.link.includes('youtu.be');
-      const canEdit = sessionUser && (sessionUser.role === 'admin' || sessionUser.role === 'kepsek' || sessionUser.username === b.addedBy);
-      const coverHtml = b.coverUrl
-        ? `<img src="${b.coverUrl}" style="width:100%;height:90px;object-fit:cover;border-radius:10px 10px 0 0" onerror="this.style.display='none';this.nextSibling.style.display='flex'" /><div style="display:none;height:90px;background:${bg};border-radius:10px 10px 0 0;align-items:center;justify-content:center;font-size:36px">${icon}</div>`
-        : `<div style="height:90px;background:${bg};border-radius:10px 10px 0 0;display:flex;align-items:center;justify-content:center;font-size:36px">${icon}</div>`;
-
-      html += `<div class="perpus-card" onclick="perpusBuka('${b.id}')">
-        ${coverHtml}
-        <div class="perpus-card-body">
-          <div class="perpus-card-judul">${b.judul}</div>
-          <div class="perpus-card-penulis">${b.penulis || '—'}</div>
-          ${b.kelas ? `<div class="perpus-kelas-badge">Kelas ${b.kelas}</div>` : ''}
-          ${isVideo ? '<div class="perpus-type-badge video">▶ Video</div>' : ''}
-        </div>
-        ${canEdit ? `<div class="perpus-card-actions">
-          <button onclick="event.stopPropagation();perpusEdit('${b.id}')" class="perpus-act-btn edit">✏️</button>
-          <button onclick="event.stopPropagation();perpusHapus('${b.id}')" class="perpus-act-btn del">🗑</button>
-        </div>` : ''}
-      </div>`;
-    });
-
-    html += `</div></div>`;
-  });
-
   el.innerHTML = html;
-
-  // Counter di sub-header
   const subEl = document.getElementById('perpus-sub');
   if (subEl) subEl.textContent = perpusData.length + ' koleksi · SD Negeri 3 Kalipang';
 }
@@ -3562,63 +3679,53 @@ function perpusFilterKat(kat, el) {
   perpusRenderRak();
 }
 
-// ----- Buka buku (modal embed) -----
+// --- Buka modal buku ---
 function perpusBuka(id) {
   const b = perpusData.find(x => x.id === id);
   if (!b) return;
-
   document.getElementById('perpus-modal-judul').textContent = b.judul;
-  document.getElementById('perpus-modal-sub').textContent   = (b.penulis || '') + (b.kelas ? ' · Kelas ' + b.kelas : '');
+  const kelasTxt = b.kelas ? ' · Kelas ' + b.kelas : '';
+  const mapelTxt = b.mapel ? ' · ' + b.mapel : '';
+  document.getElementById('perpus-modal-sub').textContent   = (b.penulis||'') + kelasTxt + mapelTxt;
   document.getElementById('perpus-modal-link-btn').href     = b.link;
 
-  const body = document.getElementById('perpus-modal-body');
-
-  // Konversi link Drive ke embed viewer
   let embedUrl = b.link;
   if (b.link.includes('drive.google.com/file')) {
-    const match = b.link.match(/\/d\/([^\/]+)/);
-    if (match) embedUrl = 'https://drive.google.com/file/d/' + match[1] + '/preview';
+    const m = b.link.match(/\/d\/([^\/]+)/); if (m) embedUrl = 'https://drive.google.com/file/d/'+m[1]+'/preview';
   } else if (b.link.includes('drive.google.com/open')) {
-    const id2 = new URL(b.link).searchParams.get('id');
-    if (id2) embedUrl = 'https://drive.google.com/file/d/' + id2 + '/preview';
+    try { const id2=new URL(b.link).searchParams.get('id'); if(id2) embedUrl='https://drive.google.com/file/d/'+id2+'/preview'; } catch{}
   } else if (b.link.includes('youtube.com/watch')) {
-    const vid = new URL(b.link).searchParams.get('v');
-    if (vid) embedUrl = 'https://www.youtube.com/embed/' + vid;
+    try { const v=new URL(b.link).searchParams.get('v'); if(v) embedUrl='https://www.youtube.com/embed/'+v; } catch{}
   } else if (b.link.includes('youtu.be/')) {
-    const vid = b.link.split('youtu.be/')[1]?.split('?')[0];
-    if (vid) embedUrl = 'https://www.youtube.com/embed/' + vid;
+    const v=b.link.split('youtu.be/')[1]?.split('?')[0]; if(v) embedUrl='https://www.youtube.com/embed/'+v;
   }
 
-  const isDrivable = embedUrl.includes('drive.google.com') || embedUrl.includes('youtube.com/embed');
+  const icon = perpusKatIcon[b.kategori]||'📄';
+  const bg   = (perpusKatColor[b.kategori]||{}).bg||'#F5F5F5';
+  const body = document.getElementById('perpus-modal-body');
+  const canEmbed = embedUrl.includes('drive.google.com')||embedUrl.includes('youtube.com/embed');
 
-  if (isDrivable) {
-    body.innerHTML = `<iframe src="${embedUrl}" style="width:100%;height:100%;border:none" allowfullscreen></iframe>`;
-  } else {
-    // Tidak bisa di-embed, tampilkan info + tombol buka
-    const icon = perpusKatIcon[b.kategori] || '📄';
-    const clr  = (perpusKatColor[b.kategori] || {}).bg || '#F5F5F5';
-    body.innerHTML = `
-      <div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;background:${clr}">
+  body.innerHTML = canEmbed
+    ? `<iframe src="${embedUrl}" style="width:100%;height:100%;border:none" allowfullscreen></iframe>`
+    : `<div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;background:${bg}">
         <div style="font-size:56px;margin-bottom:14px">${icon}</div>
         <div style="font-size:15px;font-weight:700;color:#212121;margin-bottom:8px">${b.judul}</div>
-        ${b.deskripsi ? `<div style="font-size:12px;color:#616161;line-height:1.6;margin-bottom:16px">${b.deskripsi}</div>` : ''}
-        <div style="font-size:12px;color:#9E9E9E">Konten ini tidak bisa ditampilkan di dalam aplikasi.<br>Gunakan tombol <strong>Buka di Browser</strong> di bawah.</div>
+        ${b.deskripsi?`<div style="font-size:12px;color:#616161;line-height:1.6;margin-bottom:16px">${b.deskripsi}</div>`:''}
+        <div style="font-size:12px;color:#9E9E9E">Gunakan tombol <strong>Buka di Browser</strong> di bawah.</div>
       </div>`;
-  }
 
-  document.getElementById('perpus-modal-overlay').style.display = 'block';
+  document.getElementById('perpus-modal-overlay').style.display='block';
   const modal = document.getElementById('perpus-modal');
-  modal.style.display = 'flex';
-  modal.style.position = 'fixed';
+  modal.style.display='flex'; modal.style.position='fixed';
 }
 
 function perpusModalTutup() {
-  document.getElementById('perpus-modal-overlay').style.display = 'none';
-  document.getElementById('perpus-modal').style.display = 'none';
-  document.getElementById('perpus-modal-body').innerHTML = ''; // stop video/iframe
+  document.getElementById('perpus-modal-overlay').style.display='none';
+  document.getElementById('perpus-modal').style.display='none';
+  document.getElementById('perpus-modal-body').innerHTML='';
 }
 
-// ----- Cari -----
+// --- Cari ---
 function perpusCari(q) {
   const el = document.getElementById('perpus-cari-result');
   if (!el) return;
@@ -3626,120 +3733,112 @@ function perpusCari(q) {
   const list = q
     ? perpusData.filter(b =>
         b.judul.toLowerCase().includes(q) ||
-        (b.penulis && b.penulis.toLowerCase().includes(q)) ||
-        (b.kategori && b.kategori.toLowerCase().includes(q)) ||
-        (b.deskripsi && b.deskripsi.toLowerCase().includes(q))
+        (b.penulis&&b.penulis.toLowerCase().includes(q)) ||
+        (b.kategori&&b.kategori.toLowerCase().includes(q)) ||
+        (b.mapel&&b.mapel.toLowerCase().includes(q)) ||
+        (b.deskripsi&&b.deskripsi.toLowerCase().includes(q))
       )
     : perpusData;
 
-  if (!list.length) {
-    el.innerHTML = '<div class="empty-state"><div class="empty-icon">🔍</div><div>Tidak ditemukan.</div></div>';
-    return;
-  }
+  if (!list.length) { el.innerHTML='<div class="empty-state"><div class="empty-icon">🔍</div><div>Tidak ditemukan.</div></div>'; return; }
 
   el.innerHTML = list.map(b => {
-    const icon = perpusKatIcon[b.kategori] || '📄';
-    const c    = perpusKatColor[b.kategori] || { bg:'#F5F5F5', clr:'#424242' };
-    const canEdit = sessionUser && (sessionUser.role === 'admin' || sessionUser.role === 'kepsek' || sessionUser.username === b.addedBy);
-    return `<div class="guru-card" style="cursor:pointer" onclick="perpusBuka('${b.id}')">
+    const icon = perpusKatIcon[b.kategori]||'📄';
+    const c    = perpusKatColor[b.kategori]||{bg:'#F5F5F5',clr:'#424242'};
+    const canEdit = sessionUser&&(sessionUser.role==='admin'||sessionUser.role==='kepsek'||sessionUser.username===b.addedBy);
+    const mapelBadge = b.mapel
+      ? `<span style="background:${b.mapel==='PJOK'?'#E3F2FD':'#E8F5E9'};color:${b.mapel==='PJOK'?'#0D47A1':'#1B5E20'};border-radius:6px;padding:1px 7px;font-size:10px;font-weight:700">${b.mapel==='PJOK'?'🏃':'📖'} ${b.mapel}</span>` : '';
+    const kelasBadge = b.kelas
+      ? `<span style="background:${perpusKlsColor[parseInt(b.kelas)]};color:${perpusKlsClr[parseInt(b.kelas)]};border-radius:6px;padding:1px 7px;font-size:10px;font-weight:700">Kls ${b.kelas}</span>` : '';
+    return `<div class="guru-card" style="cursor:pointer;margin-bottom:8px" onclick="perpusBuka('${b.id}')">
       <div style="width:44px;height:44px;border-radius:12px;background:${c.bg};display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">${icon}</div>
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;font-weight:700;color:#212121">${b.judul}</div>
-        <div style="font-size:11px;color:#9E9E9E">${b.penulis || '—'} · <span style="color:${c.clr};font-weight:600">${b.kategori}</span></div>
-        ${b.kelas ? `<span style="font-size:10px;background:#E8F5E9;color:#1B5E20;border-radius:6px;padding:1px 7px;font-weight:600">Kelas ${b.kelas}</span>` : ''}
+        <div style="font-size:11px;color:#9E9E9E;margin-bottom:4px">${b.penulis||'—'} · <span style="color:${c.clr};font-weight:600">${b.kategori}</span></div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap">${kelasBadge}${mapelBadge}</div>
       </div>
-      ${canEdit ? `<div style="display:flex;gap:6px">
+      ${canEdit?`<div style="display:flex;flex-direction:column;gap:4px">
         <button onclick="event.stopPropagation();perpusEdit('${b.id}')" class="perpus-act-btn edit">✏️</button>
         <button onclick="event.stopPropagation();perpusHapus('${b.id}')" class="perpus-act-btn del">🗑</button>
-      </div>` : ''}
+      </div>`:''}
     </div>`;
   }).join('');
 }
 
-// ----- Tambah / Edit / Hapus -----
+// --- Simpan / Edit / Hapus ---
 function perpusSimpan() {
-  if (!sessionUser || (sessionUser.role !== 'admin' && sessionUser.role !== 'kepsek' && sessionUser.role !== 'guru')) {
-    showToast('⛔ Akses ditolak.', '#C62828'); return;
-  }
+  if (!sessionUser||!['admin','kepsek','guru'].includes(sessionUser.role)) { showToast('⛔ Akses ditolak.','#C62828'); return; }
   const judul = document.getElementById('perpus-judul').value.trim();
   const link  = document.getElementById('perpus-link').value.trim();
-  if (!judul) { showToast('Judul tidak boleh kosong!', '#C62828'); return; }
-  if (!link)  { showToast('Link tidak boleh kosong!', '#C62828'); return; }
+  if (!judul) { showToast('Judul tidak boleh kosong!','#C62828'); return; }
+  if (!link)  { showToast('Link tidak boleh kosong!','#C62828'); return; }
 
   const editId = document.getElementById('perpus-edit-id').value;
-  const item = {
-    id       : editId || 'p' + Date.now(),
+  const lama   = editId?(perpusData.find(x=>x.id===editId)||{}):{};
+  const item   = {
+    id      : editId||'p'+Date.now(),
     judul,
-    penulis  : document.getElementById('perpus-penulis').value.trim(),
-    kategori : document.getElementById('perpus-kategori').value,
-    kelas    : document.getElementById('perpus-kelas').value,
+    penulis : document.getElementById('perpus-penulis').value.trim(),
+    kategori: document.getElementById('perpus-kategori').value,
+    mapel   : document.getElementById('perpus-mapel').value,
+    kelas   : document.getElementById('perpus-kelas').value,
     link,
-    coverUrl : document.getElementById('perpus-cover').value.trim(),
-    deskripsi: document.getElementById('perpus-desk').value.trim(),
-    addedBy  : editId ? (perpusData.find(x=>x.id===editId)||{}).addedBy || sessionUser.username : sessionUser.username,
-    addedAt  : editId ? (perpusData.find(x=>x.id===editId)||{}).addedAt || new Date().toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+    coverUrl: document.getElementById('perpus-cover').value.trim(),
+    deskripsi:document.getElementById('perpus-desk').value.trim(),
+    addedBy : lama.addedBy||sessionUser.username,
+    addedAt : lama.addedAt||new Date().toISOString().split('T')[0],
   };
 
-  if (editId) {
-    const idx = perpusData.findIndex(x => x.id === editId);
-    if (idx >= 0) perpusData[idx] = item;
-  } else {
-    perpusData.unshift(item);
-  }
+  if (editId) { const idx=perpusData.findIndex(x=>x.id===editId); if(idx>=0) perpusData[idx]=item; }
+  else perpusData.unshift(item);
 
   LS.set('perpus_data', perpusData);
   perpusBatalEdit();
-  showToast('✅ "' + judul + '" berhasil disimpan!', '#2E7D32');
-
-  // Balik ke rak
+  showToast('✅ "'+judul+'" berhasil disimpan!','#2E7D32');
   document.querySelectorAll('#screen-perpustakaan .tab-btn')[0].click();
 }
 
 function perpusEdit(id) {
-  const b = perpusData.find(x => x.id === id);
-  if (!b) return;
-
-  document.getElementById('perpus-edit-id').value    = b.id;
-  document.getElementById('perpus-judul').value      = b.judul;
-  document.getElementById('perpus-penulis').value    = b.penulis  || '';
-  document.getElementById('perpus-kategori').value   = b.kategori || 'Pelajaran';
-  document.getElementById('perpus-kelas').value      = b.kelas    || '';
-  document.getElementById('perpus-link').value       = b.link     || '';
-  document.getElementById('perpus-cover').value      = b.coverUrl || '';
-  document.getElementById('perpus-desk').value       = b.deskripsi|| '';
-
-  document.getElementById('perpus-form-title').textContent    = '✏️ Edit Koleksi';
-  document.getElementById('perpus-btn-simpan').textContent    = '💾 Simpan Perubahan';
-  document.getElementById('perpus-btn-batal').style.display   = '';
-
-  // Switch ke tab tambah
+  const b = perpusData.find(x=>x.id===id); if(!b) return;
+  document.getElementById('perpus-edit-id').value   = b.id;
+  document.getElementById('perpus-judul').value     = b.judul;
+  document.getElementById('perpus-penulis').value   = b.penulis||'';
+  document.getElementById('perpus-kategori').value  = b.kategori||'Pelajaran';
+  document.getElementById('perpus-mapel').value     = b.mapel||'';
+  document.getElementById('perpus-kelas').value     = b.kelas||'';
+  document.getElementById('perpus-link').value      = b.link||'';
+  document.getElementById('perpus-cover').value     = b.coverUrl||'';
+  document.getElementById('perpus-desk').value      = b.deskripsi||'';
+  document.getElementById('perpus-form-title').textContent   = '✏️ Edit Koleksi';
+  document.getElementById('perpus-btn-simpan').textContent   = '💾 Simpan Perubahan';
+  document.getElementById('perpus-btn-batal').style.display  = '';
+  perpusToggleKelas();
   document.querySelectorAll('#screen-perpustakaan .tab-btn')[2].click();
   window.scrollTo(0,0);
 }
 
 function perpusBatalEdit() {
-  document.getElementById('perpus-edit-id').value  = '';
-  document.getElementById('perpus-judul').value    = '';
-  document.getElementById('perpus-penulis').value  = '';
-  document.getElementById('perpus-kategori').value = 'Pelajaran';
-  document.getElementById('perpus-kelas').value    = '';
-  document.getElementById('perpus-link').value     = '';
-  document.getElementById('perpus-cover').value    = '';
-  document.getElementById('perpus-desk').value     = '';
+  ['perpus-edit-id','perpus-judul','perpus-penulis','perpus-link','perpus-cover','perpus-desk'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  const kat=document.getElementById('perpus-kategori'); if(kat) kat.value='Pelajaran';
+  const mp=document.getElementById('perpus-mapel');     if(mp)  mp.value='';
+  const kls=document.getElementById('perpus-kelas');    if(kls) kls.value='';
   document.getElementById('perpus-form-title').textContent  = '➕ Tambah Koleksi Baru';
   document.getElementById('perpus-btn-simpan').textContent  = '💾 Simpan';
   document.getElementById('perpus-btn-batal').style.display = 'none';
+  perpusToggleKelas();
 }
 
 function perpusHapus(id) {
-  const b = perpusData.find(x => x.id === id);
-  if (!b) return;
-  if (!confirm('Hapus "' + b.judul + '"?')) return;
-  perpusData = perpusData.filter(x => x.id !== id);
+  const b = perpusData.find(x=>x.id===id); if(!b) return;
+  if(!confirm('Hapus "'+b.judul+'"?')) return;
+  perpusData = perpusData.filter(x=>x.id!==id);
   LS.set('perpus_data', perpusData);
   perpusRenderRak();
-  perpusCari(document.getElementById('perpus-search-input')?.value || '');
-  showToast('🗑 Koleksi dihapus.', '#F57F17');
+  const q=document.getElementById('perpus-search-input')?.value||'';
+  if(q) perpusCari(q);
+  showToast('🗑 Koleksi dihapus.','#F57F17');
 }
 
 // ============================================================
