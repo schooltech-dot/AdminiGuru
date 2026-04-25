@@ -164,95 +164,12 @@ function updateDashStats() {
 }
 
 // ===== TOAST =====
-// ============================================================
-// ==================== POPUP NOTIFIKASI ======================
-// ============================================================
-let _popupTimer = null;
-let _popupBarTimer = null;
-
-/**
- * showPopup(msg, type, title, duration)
- * type: 'success' | 'error' | 'warning' | 'info' | 'delete'
- * title: opsional, auto dari type jika kosong
- * duration: ms (default 3200)
- */
-function showPopup(msg, type, title, duration) {
-  type     = type     || 'success';
-  duration = duration || 3200;
-
-  const defaultTitle = {
-    success: 'Berhasil!',
-    error  : 'Gagal!',
-    warning: 'Perhatian!',
-    info   : 'Informasi',
-    delete : 'Dihapus',
-  };
-  const defaultIcon = {
-    success: '✅',
-    error  : '❌',
-    warning: '⚠️',
-    info   : 'ℹ️',
-    delete : '🗑️',
-  };
-
-  title = title || defaultTitle[type] || 'Notifikasi';
-
-  const el    = document.getElementById('popup-notif');
-  const icon  = document.getElementById('popup-icon');
-  const ttl   = document.getElementById('popup-title');
-  const txt   = document.getElementById('popup-msg');
-  const bar   = document.getElementById('popup-bar');
-  if (!el) { console.warn('popup-notif not found'); return; }
-
-  // Clear timer lama
-  if (_popupTimer)    clearTimeout(_popupTimer);
-  if (_popupBarTimer) clearTimeout(_popupBarTimer);
-
-  // Atur konten
-  icon.textContent = defaultIcon[type] || '📢';
-  ttl.textContent  = title;
-  txt.textContent  = msg;
-
-  // Reset type class
-  el.className = '';
-  el.classList.add('type-' + type);
-
-  // Reset bar
-  bar.style.transition = 'none';
-  bar.style.width      = '100%';
-
-  // Tampilkan
-  el.classList.add('show');
-
-  // Animasi progress bar
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      bar.style.transition = 'width ' + duration + 'ms linear';
-      bar.style.width      = '0%';
-    });
-  });
-
-  // Auto dismiss
-  _popupTimer = setTimeout(() => popupDismiss(), duration);
-}
-
-function popupDismiss() {
-  const el = document.getElementById('popup-notif');
-  if (!el) return;
-  el.classList.remove('show');
-  if (_popupTimer)    clearTimeout(_popupTimer);
-  if (_popupBarTimer) clearTimeout(_popupBarTimer);
-}
-
-// Alias showToast → showPopup agar semua kode lama tetap jalan
 function showToast(msg, color) {
-  // Deteksi tipe dari warna lama
-  let type = 'success';
-  if (color === '#C62828' || color === '#B71C1C') type = 'error';
-  else if (color === '#F57F17' || color === '#E65100') type = 'delete';
-  else if (color === '#1565C0' || color === '#0D47A1') type = 'info';
-  else if (color === '#E65100' || color === '#BF360C') type = 'warning';
-  showPopup(msg, type);
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = color || '#2E7D32';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3200);
 }
 
 // ============================================================
