@@ -134,6 +134,8 @@ window.addEventListener('DOMContentLoaded', function () {
   if(Object.keys(jadwalData).length===0) initJadwalDemo();
   materiInit();
   jurnalInit();
+  // Lanjutkan session timeout jika user sudah login (reload halaman)
+  if (sessionUser) sessionTimeoutReset();
 });
 
 // ===== updateDashStats =====
@@ -202,7 +204,10 @@ async function initDefaultAccounts() {
 let sessionUser = null;
 try {
   const sesi = sessionStorage.getItem('sdn3_sesi');
-  if (sesi) sessionUser = JSON.parse(sesi);
+  if (sesi) {
+    sessionUser = JSON.parse(sesi);
+    // Timer diinisialisasi setelah DOM ready (lihat DOMContentLoaded)
+  }
 } catch {}
 
 let currentRole = 'guru';
@@ -267,6 +272,9 @@ async function doLogin() {
   sessionUser = { username: akun.username, nama: akun.nama, role: akun.role };
   sessionStorage.setItem('sdn3_sesi', JSON.stringify(sessionUser));
 
+  // Mulai session timeout 30 menit
+  sessionTimeoutReset();
+
   msg.textContent = '✅ Login berhasil! Mengalihkan...';
   msg.className = 'msg-box success';
 
@@ -282,15 +290,63 @@ async function doLogin() {
   setTimeout(() => goScreen(targetScreen), 800);
 }
 
-function doLogout() {
+function doLogout(isTimeout) {
   sessionUser = null;
   try { sessionStorage.removeItem('sdn3_sesi'); } catch {}
+  sessionTimeoutReset(true); // hentikan timer
   loginAttempts.count = 0;
   document.getElementById('inp-username').value = '';
   document.getElementById('inp-password').value = '';
   document.getElementById('login-msg').className = 'msg-box';
+  if (isTimeout) {
+    document.getElementById('login-msg').textContent = '⏱ Sesi berakhir karena tidak aktif. Silakan login kembali.';
+    document.getElementById('login-msg').className = 'msg-box error';
+  }
   goScreen('login');
 }
+
+// ============================================================
+// ==================== SESSION TIMEOUT =======================
+// ============================================================
+const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 menit
+const SESSION_WARN_MS    = 60 * 1000;       // peringatan 1 menit sebelum
+let _sessionTimer    = null;
+let _sessionWarnTimer = null;
+let _sessionWarnShown = false;
+
+function sessionTimeoutReset(stop) {
+  clearTimeout(_sessionTimer);
+  clearTimeout(_sessionWarnTimer);
+  _sessionWarnShown = false;
+  if (stop || !sessionUser) return;
+
+  // Peringatan 1 menit sebelum habis
+  _sessionWarnTimer = setTimeout(() => {
+    if (!sessionUser) return;
+    _sessionWarnShown = true;
+    showToast('⏱ Sesi akan berakhir dalam 1 menit. Lakukan aktivitas untuk tetap login.', '#F57F17');
+  }, SESSION_TIMEOUT_MS - SESSION_WARN_MS);
+
+  // Logout otomatis
+  _sessionTimer = setTimeout(() => {
+    if (!sessionUser) return;
+    doLogout(true);
+  }, SESSION_TIMEOUT_MS);
+}
+
+// Pantau aktivitas user
+(function() {
+  const events = ['click','keydown','mousemove','touchstart','scroll'];
+  let _throttle = 0;
+  function onActivity() {
+    if (!sessionUser) return;
+    const now = Date.now();
+    if (now - _throttle < 10000) return; // throttle 10 detik
+    _throttle = now;
+    sessionTimeoutReset();
+  }
+  events.forEach(ev => document.addEventListener(ev, onActivity, { passive: true }));
+})();
 
 // ============================================================
 // ==================== FOTO PROFIL / AVATAR ==================
@@ -4120,24 +4176,282 @@ function perpusHapus(id) {
 // ==================== CETAK DOKUMEN =========================
 // ============================================================
 
+// ---- Helper: buka jendela pratinjau cetak A4 ----
+function _cetakBukaPreview(title, bodyHtml) {
+  const cfg = LS.get('app_config', appConfig);
+  const nama    = (cfg.namaSekolah  || 'SD NEGERI 3 KALIPANG').toUpperCase();
+  const alamat  = cfg.alamat        || 'Ds. Kalipang, Kec. Grobogan, Kab. Grobogan';
+  const npsn    = cfg.npsn          ? 'NPSN: ' + cfg.npsn : '';
+  const kepsek  = cfg.kepsek        || '-';
+  const nipKeps = cfg.nipKepsek     || '';
+  const tapel   = cfg.tapel         || '2025/2026';
+  const semester= cfg.semester      || 'Genap';
+  const tanggal = new Date().toLocaleDateString('id-ID', { day:'numeric', month:'long', year:'numeric' });
+
+  const html = `<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <title>${title} — ${nama}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Times New Roman', serif; font-size: 12pt; color: #000; background: #fff; }
+
+    /* ---- Wrapper A4 ---- */
+    .page { width: 210mm; min-height: 297mm; margin: 0 auto; padding: 20mm 20mm 20mm 25mm; }
+
+    /* ---- Header Kop Surat ---- */
+    .kop { display: flex; align-items: center; gap: 16px; border-bottom: 3px double #000; padding-bottom: 10px; margin-bottom: 14px; }
+    .kop-logo { width: 70px; height: 70px; display: flex; align-items: center; justify-content: center; font-size: 48px; flex-shrink: 0; }
+    .kop-teks { flex: 1; text-align: center; }
+    .kop-pemerintah { font-size: 11pt; }
+    .kop-sekolah    { font-size: 16pt; font-weight: bold; letter-spacing: 1px; margin: 2px 0; }
+    .kop-alamat     { font-size: 10pt; color: #333; }
+    .kop-npsn       { font-size: 9.5pt; color: #555; margin-top: 2px; }
+
+    /* ---- Judul Dokumen ---- */
+    .doc-title { text-align: center; margin: 10px 0 14px; }
+    .doc-title h2 { font-size: 13pt; font-weight: bold; text-transform: uppercase; text-decoration: underline; }
+    .doc-title p  { font-size: 10.5pt; color: #333; margin-top: 3px; }
+
+    /* ---- Tabel ---- */
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 10.5pt; }
+    th, td { border: 1px solid #000; padding: 5px 7px; }
+    th { background: #f0f0f0; font-weight: bold; text-align: center; }
+    td { vertical-align: top; }
+    .tc { text-align: center; }
+    .tr { text-align: right; }
+
+    /* ---- TTD ---- */
+    .ttd-row { display: flex; justify-content: flex-end; margin-top: 24px; }
+    .ttd-box { text-align: center; width: 200px; }
+    .ttd-box p { font-size: 10.5pt; }
+    .ttd-box .ttd-space { height: 52px; }
+    .ttd-box .ttd-nama  { font-weight: bold; text-decoration: underline; font-size: 11pt; }
+    .ttd-box .ttd-nip   { font-size: 9.5pt; }
+
+    /* ---- Print CSS ---- */
+    @media print {
+      body { background: #fff; }
+      .no-print { display: none !important; }
+      .page { padding: 15mm 15mm 15mm 20mm; }
+    }
+
+    /* ---- Toolbar (tidak ikut cetak) ---- */
+    .toolbar {
+      position: fixed; top: 0; left: 0; right: 0;
+      background: #1B5E20; color: #fff; padding: 10px 20px;
+      display: flex; gap: 10px; align-items: center; z-index: 999;
+      font-family: Arial, sans-serif; font-size: 13px;
+    }
+    .toolbar span { flex: 1; font-weight: bold; }
+    .toolbar button {
+      padding: 7px 18px; border: none; border-radius: 6px;
+      cursor: pointer; font-size: 13px; font-weight: bold;
+    }
+    .btn-print { background: #fff; color: #1B5E20; }
+    .btn-close  { background: rgba(255,255,255,0.2); color: #fff; }
+    body { padding-top: 50px; }
+    @media print { body { padding-top: 0; } .toolbar { display: none; } }
+  </style>
+</head>
+<body>
+  <div class="toolbar no-print">
+    <span>🖨️ Pratinjau Cetak — ${title}</span>
+    <button class="btn-print" onclick="window.print()">🖨️ Cetak / Simpan PDF</button>
+    <button class="btn-close"  onclick="window.close()">✕ Tutup</button>
+  </div>
+  <div class="page">
+    <!-- KOP SURAT -->
+    <div class="kop">
+      <div class="kop-logo">🏫</div>
+      <div class="kop-teks">
+        <div class="kop-pemerintah">PEMERINTAH KABUPATEN GROBOGAN<br>DINAS PENDIDIKAN</div>
+        <div class="kop-sekolah">${nama}</div>
+        <div class="kop-alamat">${alamat}</div>
+        ${npsn ? `<div class="kop-npsn">${npsn}</div>` : ''}
+      </div>
+    </div>
+
+    <!-- JUDUL -->
+    <div class="doc-title">
+      <h2>${title}</h2>
+      <p>Tahun Pelajaran ${tapel} — Semester ${semester}</p>
+    </div>
+
+    <!-- KONTEN DINAMIS -->
+    ${bodyHtml}
+
+    <!-- TTD -->
+    <div class="ttd-row">
+      <div class="ttd-box">
+        <p>Kalipang, ${tanggal}</p>
+        <p>Kepala Sekolah</p>
+        <div class="ttd-space"></div>
+        <p class="ttd-nama">${kepsek}</p>
+        ${nipKeps ? `<p class="ttd-nip">NIP. ${nipKeps}</p>` : ''}
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+
+  const w = window.open('', '_blank', 'width=900,height=700,scrollbars=yes');
+  if (!w) { showToast('⚠️ Popup diblokir browser. Izinkan popup untuk mencetak.', '#F57F17'); return; }
+  w.document.write(html);
+  w.document.close();
+}
+
+// ---- Cetak Absensi ----
 function cetakAbsensi() {
-  if (!Object.keys(absenHistory).length) { showToast('Belum ada data absensi tersimpan!','#F57F17'); return; }
-  rekapExport();
+  const tgl   = document.getElementById('abs-tgl')?.value;
+  const kelas = document.getElementById('abs-kelas')?.value;
+
+  if (!Object.keys(absenHistory).length && !siswaMaster.length) {
+    showToast('Belum ada data absensi atau siswa tersimpan!', '#F57F17'); return;
+  }
+
+  // Susun tabel rekap dari absenHistory
+  let rows = '';
+  const allDates = Object.keys(absenHistory).sort().reverse().slice(0, 30);
+  if (!allDates.length) {
+    rows = '<tr><td colspan="6" style="text-align:center;color:#777">Belum ada data absensi tersimpan.</td></tr>';
+  } else {
+    allDates.forEach(tgl => {
+      const kelasMap = absenHistory[tgl] || {};
+      Object.keys(kelasMap).forEach(kls => {
+        const e = kelasMap[kls];
+        const total = (e.counts.H||0)+(e.counts.S||0)+(e.counts.I||0)+(e.counts.A||0);
+        rows += `<tr>
+          <td class="tc">${new Date(tgl).toLocaleDateString('id-ID',{day:'2-digit',month:'2-digit',year:'numeric'})}</td>
+          <td class="tc">${kls}</td>
+          <td class="tc">${e.counts.H||0}</td>
+          <td class="tc">${e.counts.S||0}</td>
+          <td class="tc">${e.counts.I||0}</td>
+          <td class="tc">${e.counts.A||0}</td>
+        </tr>`;
+      });
+    });
+  }
+
+  const body = `
+    <table>
+      <thead>
+        <tr>
+          <th style="width:18%">Tanggal</th>
+          <th style="width:12%">Kelas</th>
+          <th style="width:17%">Hadir (H)</th>
+          <th style="width:17%">Sakit (S)</th>
+          <th style="width:17%">Izin (I)</th>
+          <th style="width:17%">Alpha (A)</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+  _cetakBukaPreview('Rekap Daftar Absensi', body);
 }
 
+// ---- Cetak Data Siswa ----
 function cetakDataSiswa() {
-  if (typeof siswaDownloadExcel === 'function') siswaDownloadExcel();
-  else showToast('Buka menu Data Siswa terlebih dahulu.','#F57F17');
+  if (!siswaMaster.length) { showToast('Belum ada data siswa! Upload Excel di menu Absensi.', '#F57F17'); return; }
+
+  const rows = siswaMaster.map((s, i) => `<tr>
+    <td class="tc">${i+1}</td>
+    <td class="tc">${s.noInduk||'-'}</td>
+    <td class="tc">${s.nisn||'-'}</td>
+    <td>${s.nama||'-'}</td>
+    <td class="tc">${s.kelas||'-'}</td>
+    <td class="tc">${s.jenisKelamin||'-'}</td>
+  </tr>`).join('');
+
+  const body = `
+    <table>
+      <thead>
+        <tr>
+          <th style="width:5%">No</th>
+          <th style="width:12%">No. Induk</th>
+          <th style="width:14%">NISN</th>
+          <th style="width:35%">Nama Siswa</th>
+          <th style="width:14%">Kelas</th>
+          <th style="width:20%">Jenis Kelamin</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+  _cetakBukaPreview('Daftar Data Siswa', body);
 }
 
+// ---- Cetak Rekap Kelas ----
 function cetakRekapKelas() {
-  if (typeof kelasExportExcel === 'function') kelasExportExcel();
-  else showToast('Buka menu Data Kelas terlebih dahulu.','#F57F17');
+  const byKelas = {};
+  siswaMaster.forEach(s => {
+    const k = 'Kelas ' + (s.kelas||'?');
+    if (!byKelas[k]) byKelas[k] = { L:0, P:0 };
+    if ((s.jenisKelamin||'').toLowerCase().startsWith('l')) byKelas[k].L++;
+    else byKelas[k].P++;
+  });
+  if (!Object.keys(byKelas).length) { showToast('Belum ada data siswa!', '#F57F17'); return; }
+
+  let totalL = 0, totalP = 0;
+  const rows = Object.keys(byKelas).sort().map((k,i) => {
+    const d = byKelas[k];
+    totalL += d.L; totalP += d.P;
+    return `<tr><td class="tc">${i+1}</td><td>${k}</td><td class="tc">${d.L}</td><td class="tc">${d.P}</td><td class="tc">${d.L+d.P}</td></tr>`;
+  }).join('');
+
+  const body = `
+    <table>
+      <thead>
+        <tr>
+          <th style="width:8%">No</th>
+          <th style="width:40%">Kelas / Rombel</th>
+          <th style="width:17%">L</th>
+          <th style="width:17%">P</th>
+          <th style="width:18%">Jumlah</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows}
+        <tr style="font-weight:bold;background:#f0f0f0">
+          <td colspan="2" class="tc">TOTAL</td>
+          <td class="tc">${totalL}</td>
+          <td class="tc">${totalP}</td>
+          <td class="tc">${totalL+totalP}</td>
+        </tr>
+      </tbody>
+    </table>`;
+  _cetakBukaPreview('Rekap Data Kelas', body);
 }
 
+// ---- Cetak Data Guru ----
+function cetakDataGuru() {
+  if (!guruData.length) { showToast('Belum ada data guru!', '#F57F17'); return; }
+
+  const rows = guruData.map((g, i) => `<tr>
+    <td class="tc">${i+1}</td>
+    <td>${g.nip !== '-' ? g.nip : ''}</td>
+    <td>${g.nama||'-'}</td>
+    <td>${g.jenisGuru||g.jabatan||'-'}</td>
+  </tr>`).join('');
+
+  const body = `
+    <table>
+      <thead>
+        <tr>
+          <th style="width:6%">No</th>
+          <th style="width:26%">NIP</th>
+          <th style="width:38%">Nama Guru</th>
+          <th style="width:30%">Jabatan / Jenis Guru</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+  _cetakBukaPreview('Daftar Data Guru', body);
+}
+
+// ---- Cetak Nilai (arahkan ke menu penilaian kalau data belum siap) ----
 function cetakNilai() {
   if (!Object.keys(nilaiData).length) { showToast('Belum ada data nilai! Input nilai di menu Penilaian.','#F57F17'); return; }
-  // Coba export langsung jika nilaiExportExcel tersedia dan nilaiCfg sudah diatur
   if (typeof nilaiExportExcel === 'function' && typeof nilaiCfg !== 'undefined' && nilaiCfg.kelas) {
     nilaiExportExcel();
   } else {
@@ -4145,17 +4459,33 @@ function cetakNilai() {
   }
 }
 
+// ---- Cetak Jurnal ----
 function cetakJurnal() {
-  if (typeof jurnalExport === 'function') jurnalExport();
+  if (typeof jurnalList === 'undefined' || !jurnalList.length) {
+    showToast('Belum ada jurnal tersimpan!', '#F57F17'); return;
+  }
+
+  const rows = jurnalList.slice(0, 50).map((j, i) => `<tr>
+    <td class="tc">${i+1}</td>
+    <td class="tc">${j.tgl||'-'}</td>
+    <td class="tc">Kelas ${j.kelas||'-'}</td>
+    <td>${j.matpel||'-'}</td>
+    <td>${(j.materi||'-').substring(0,60)}${(j.materi||'').length>60?'…':''}</td>
+  </tr>`).join('');
+
+  const body = `
+    <table>
+      <thead>
+        <tr>
+          <th style="width:5%">No</th>
+          <th style="width:14%">Tanggal</th>
+          <th style="width:12%">Kelas</th>
+          <th style="width:18%">Mata Pelajaran</th>
+          <th style="width:51%">Materi</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+  _cetakBukaPreview('Jurnal Pembelajaran Guru', body);
 }
 
-function cetakDataGuru() {
-  const wb = XLSX.utils.book_new();
-  const header = ['No','NIP','Nama Guru','Jenis Guru'];
-  const rows = guruData.map(g => [g.no, g.nip !== '-' ? g.nip : '', g.nama, g.jenisGuru || g.jabatan || '']);
-  const ws = XLSX.utils.aoa_to_sheet([header,...rows]);
-  ws['!cols'] = [{wch:5},{wch:20},{wch:26},{wch:22},{wch:30},{wch:14}];
-  XLSX.utils.book_append_sheet(wb, ws, 'Data Guru');
-  XLSX.writeFile(wb, 'DataGuru_SDN3Kalipang.xlsx');
-  showToast('✅ Data guru diexport!','#2E7D32');
-}

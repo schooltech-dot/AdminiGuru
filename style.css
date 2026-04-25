@@ -850,3 +850,11 @@ body { font-family: 'Segoe UI', Arial, sans-serif; background: #F5F5F5; color: #
 }
 .perpus-act-btn.edit { background: #E8F5E9; }
 .perpus-act-btn.del  { background: #FFEBEE; }
+
+/* ===== SESSION TIMEOUT INDICATOR ===== */
+.session-bar {
+  position: fixed; top: 0; left: 0; right: 0; height: 3px;
+  background: #E8F5E9; z-index: 9998;
+  transition: background 1s;
+}
+.session-bar.warn { background: #FF8F00; }
