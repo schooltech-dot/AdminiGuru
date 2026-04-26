@@ -3978,7 +3978,7 @@ function perpusTab(tab, el) {
 function _perpusCardHtml(b) {
   const icon = perpusKatIcon[b.kategori] || '📄';
   const c    = perpusKatColor[b.kategori] || { bg:'#F5F5F5', clr:'#424242' };
-  const canEdit = sessionUser && (sessionUser.role==='admin'||sessionUser.role==='kepsek'||sessionUser.username===b.addedBy);
+  const canEdit = sessionUser && ['admin','kepsek','guru'].includes(sessionUser.role);
 
   const coverHtml = b.coverUrl
     ? `<img src="${b.coverUrl}" style="width:100%;height:90px;object-fit:cover;border-radius:10px 10px 0 0"
@@ -4217,7 +4217,7 @@ function perpusCari(q) {
   el.innerHTML = list.map(b => {
     const icon = perpusKatIcon[b.kategori]||'📄';
     const c    = perpusKatColor[b.kategori]||{bg:'#F5F5F5',clr:'#424242'};
-    const canEdit = sessionUser&&(sessionUser.role==='admin'||sessionUser.role==='kepsek'||sessionUser.username===b.addedBy);
+    const canEdit = sessionUser && ['admin','kepsek','guru'].includes(sessionUser.role);
     const mapelBadge = b.mapel
       ? `<span style="background:${b.mapel==='PJOK'?'#E3F2FD':'#E8F5E9'};color:${b.mapel==='PJOK'?'#0D47A1':'#1B5E20'};border-radius:6px;padding:1px 7px;font-size:10px;font-weight:700">${b.mapel==='PJOK'?'🏃':'📖'} ${b.mapel}</span>` : '';
     const kelasBadge = b.kelas
