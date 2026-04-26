@@ -117,48 +117,42 @@ function goScreen(id) {
   if (id === 'perpustakaan') perpusLoad();
 }
 
-window.addEventListener('DOMContentLoaded', async function () {
-  try {
-    // Sembunyikan semua screen dulu
-    document.querySelectorAll('.screen').forEach(s => { s.style.display = 'none'; });
+window.addEventListener('DOMContentLoaded', function () {
+  // Sembunyikan semua screen dulu
+  document.querySelectorAll('.screen').forEach(s => { s.style.display = 'none'; });
 
-    // Inisialisasi akun default — await agar selesai sebelum cek sesi
-    await initDefaultAccounts();
+  // Set tanggal hari ini
+  const d = new Date();
+  const tgl = d.toISOString().split('T')[0];
+  const absEl = document.getElementById('abs-tgl');
+  if (absEl) absEl.value = tgl;
 
-    // Set tanggal hari ini
-    const d = new Date();
-    const tgl = d.toISOString().split('T')[0];
-    const absEl = document.getElementById('abs-tgl');
-    if (absEl) absEl.value = tgl;
+  // Init data & modul — guard typeof agar tidak crash jika fungsi tidak ada
+  if (typeof initPenilaian  === 'function') initPenilaian();
+  if (typeof initJadwalDemo === 'function') {
+    const jd = (typeof jadwalData !== 'undefined') ? jadwalData : {};
+    if (Object.keys(jd).length === 0) initJadwalDemo();
+  }
+  if (typeof materiInit === 'function') materiInit();
+  if (typeof jurnalInit === 'function') jurnalInit();
 
-    // Init data & modul — guard typeof agar tidak crash jika fungsi tidak ada
-    if (typeof initPenilaian  === 'function') initPenilaian();
-    if (typeof initJadwalDemo === 'function' && Object.keys(jadwalData).length === 0) initJadwalDemo();
-    if (typeof materiInit     === 'function') materiInit();
-    if (typeof jurnalInit     === 'function') jurnalInit();
+  // ── Restore sesi: initDefaultAccounts async, tapi kita tidak perlu await
+  //    karena hanya perlu akun saat login, bukan saat restore sesi ──
+  initDefaultAccounts();
 
-    // ── Restore sesi jika sudah pernah login ──
-    if (sessionUser) {
-      // Pulihkan tampilan dashboard
-      const rl = { guru: 'Guru', kepsek: 'Kepala Sekolah', admin: 'Administrator' };
-      const uname = document.getElementById('dash-uname');
-      const urole = document.getElementById('dash-role');
-      if (uname) uname.textContent = sessionUser.nama;
-      if (urole) urole.textContent = (rl[sessionUser.role] || sessionUser.role) + ' • SD Negeri 3 Kalipang';
-      setTimeout(() => { if (typeof avatarLoad === 'function') avatarLoad(); }, 50);
-      // Langsung ke dashboard tanpa login ulang
-      const target = sessionUser.role === 'kepsek' ? 'kepsek' : 'dash';
-      goScreen(target);
-      idleStart();
-    } else {
-      document.getElementById('screen-login').style.display = 'flex';
-    }
-  } catch (err) {
-    // Fallback: pastikan login tetap tampil walau ada error
-    console.error('[SDN3] Init error:', err);
-    document.querySelectorAll('.screen').forEach(s => { s.style.display = 'none'; });
-    const loginEl = document.getElementById('screen-login');
-    if (loginEl) loginEl.style.display = 'flex';
+  // Restore sesi dari localStorage
+  if (sessionUser) {
+    const rl = { guru: 'Guru', kepsek: 'Kepala Sekolah', admin: 'Administrator' };
+    const uname = document.getElementById('dash-uname');
+    const urole = document.getElementById('dash-role');
+    if (uname) uname.textContent = sessionUser.nama;
+    if (urole) urole.textContent = (rl[sessionUser.role] || sessionUser.role) + ' • SD Negeri 3 Kalipang';
+    setTimeout(function () { if (typeof avatarLoad === 'function') avatarLoad(); }, 50);
+    const target = sessionUser.role === 'kepsek' ? 'kepsek' : 'dash';
+    goScreen(target);
+    idleStart();
+  } else {
+    document.getElementById('screen-login').style.display = 'flex';
   }
 });
 
