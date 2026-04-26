@@ -122,8 +122,6 @@ window.addEventListener('DOMContentLoaded', function () {
   initDefaultAccounts();
   // Sembunyikan semua screen
   document.querySelectorAll('.screen').forEach(s => { s.style.display = 'none'; });
-  // Tampilkan login saja
-  document.getElementById('screen-login').style.display = 'flex';
   // Set tanggal hari ini
   const d = new Date();
   const tgl = d.toISOString().split('T')[0];
@@ -135,6 +133,33 @@ window.addEventListener('DOMContentLoaded', function () {
   if(Object.keys(jadwalData).length===0) initJadwalDemo();
   materiInit();
   jurnalInit();
+
+  // ── Restore sesi jika sudah pernah login ──
+  if (sessionUser) {
+    // Validasi: pastikan akun masih ada di localStorage
+    const accounts = LS.get('user_accounts', []);
+    const akunMasihAda = accounts.find(a => a.username === sessionUser.username);
+    if (!akunMasihAda) {
+      // Akun sudah dihapus → paksa login ulang
+      localStorage.removeItem('sdn3_sesi');
+      sessionUser = null;
+      document.getElementById('screen-login').style.display = 'flex';
+      return;
+    }
+    // Pulihkan nama & role di header dashboard
+    const rl = { guru: 'Guru', kepsek: 'Kepala Sekolah', admin: 'Administrator' };
+    const uname = document.getElementById('dash-uname');
+    const urole = document.getElementById('dash-role');
+    if (uname) uname.textContent = sessionUser.nama;
+    if (urole) urole.textContent = (rl[sessionUser.role] || sessionUser.role) + ' • SD Negeri 3 Kalipang';
+    setTimeout(() => avatarLoad(), 50);
+    // Langsung ke screen yang sesuai tanpa perlu login lagi
+    const target = sessionUser.role === 'kepsek' ? 'kepsek' : 'dash';
+    goScreen(target);
+  } else {
+    // Belum login → tampilkan halaman login
+    document.getElementById('screen-login').style.display = 'flex';
+  }
 });
 
 // ===== updateDashStats =====
@@ -282,10 +307,10 @@ async function initDefaultAccounts() {
   LS.set('user_accounts', accounts);
 }
 
-// State sesi login (hanya sessionStorage, bukan localStorage)
+// State sesi login — pakai localStorage agar persist saat refresh
 let sessionUser = null;
 try {
-  const sesi = sessionStorage.getItem('sdn3_sesi');
+  const sesi = localStorage.getItem('sdn3_sesi');
   if (sesi) sessionUser = JSON.parse(sesi);
 } catch {}
 
@@ -347,9 +372,9 @@ async function doLogin() {
   // Login berhasil — reset throttle
   loginAttempts.count = 0;
 
-  // Simpan sesi di sessionStorage (otomatis hapus saat tab ditutup)
+  // Simpan sesi di localStorage agar persist saat refresh/buka ulang
   sessionUser = { username: akun.username, nama: akun.nama, role: akun.role };
-  sessionStorage.setItem('sdn3_sesi', JSON.stringify(sessionUser));
+  localStorage.setItem('sdn3_sesi', JSON.stringify(sessionUser));
 
   msg.textContent = '✅ Login berhasil! Mengalihkan...';
   msg.className = 'msg-box success';
@@ -368,7 +393,7 @@ async function doLogin() {
 
 function doLogout() {
   sessionUser = null;
-  try { sessionStorage.removeItem('sdn3_sesi'); } catch {}
+  try { localStorage.removeItem('sdn3_sesi'); } catch {}
   loginAttempts.count = 0;
   document.getElementById('inp-username').value = '';
   document.getElementById('inp-password').value = '';
@@ -1829,6 +1854,7 @@ function siswaHandleFile(file) {
       }));
 
       siswaMaster = [...siswaMaster, ...imported];
+      saveAll();
       document.getElementById('siswa-fname').textContent = '📄 ' + file.name;
       document.getElementById('siswa-fcount').textContent = imported.length + ' siswa berhasil diimport';
       document.getElementById('siswa-info').classList.add('show');
