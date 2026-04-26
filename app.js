@@ -118,40 +118,47 @@ function goScreen(id) {
 }
 
 window.addEventListener('DOMContentLoaded', async function () {
-  // Sembunyikan semua screen dulu
-  document.querySelectorAll('.screen').forEach(s => { s.style.display = 'none'; });
+  try {
+    // Sembunyikan semua screen dulu
+    document.querySelectorAll('.screen').forEach(s => { s.style.display = 'none'; });
 
-  // Inisialisasi akun default — await agar selesai sebelum cek sesi
-  await initDefaultAccounts();
+    // Inisialisasi akun default — await agar selesai sebelum cek sesi
+    await initDefaultAccounts();
 
-  // Set tanggal hari ini
-  const d = new Date();
-  const tgl = d.toISOString().split('T')[0];
-  document.getElementById('abs-tgl').value = tgl;
+    // Set tanggal hari ini
+    const d = new Date();
+    const tgl = d.toISOString().split('T')[0];
+    const absEl = document.getElementById('abs-tgl');
+    if (absEl) absEl.value = tgl;
 
-  // Init data & modul
-  initDemoUjian();
-  initPenilaian();
-  if (Object.keys(jadwalData).length === 0) initJadwalDemo();
-  materiInit();
-  jurnalInit();
+    // Init data & modul — guard typeof agar tidak crash jika fungsi tidak ada
+    if (typeof initPenilaian  === 'function') initPenilaian();
+    if (typeof initJadwalDemo === 'function' && Object.keys(jadwalData).length === 0) initJadwalDemo();
+    if (typeof materiInit     === 'function') materiInit();
+    if (typeof jurnalInit     === 'function') jurnalInit();
 
-  // ── Restore sesi jika sudah pernah login ──
-  if (sessionUser) {
-    // Pulihkan tampilan dashboard
-    const rl = { guru: 'Guru', kepsek: 'Kepala Sekolah', admin: 'Administrator' };
-    const uname = document.getElementById('dash-uname');
-    const urole = document.getElementById('dash-role');
-    if (uname) uname.textContent = sessionUser.nama;
-    if (urole) urole.textContent = (rl[sessionUser.role] || sessionUser.role) + ' • SD Negeri 3 Kalipang';
-    setTimeout(() => avatarLoad(), 50);
-    // Langsung ke dashboard tanpa login ulang
-    const target = sessionUser.role === 'kepsek' ? 'kepsek' : 'dash';
-    goScreen(target);
-    idleStart(); // mulai hitung idle dari sini
-  } else {
-    // Belum pernah login → tampilkan halaman login
-    document.getElementById('screen-login').style.display = 'flex';
+    // ── Restore sesi jika sudah pernah login ──
+    if (sessionUser) {
+      // Pulihkan tampilan dashboard
+      const rl = { guru: 'Guru', kepsek: 'Kepala Sekolah', admin: 'Administrator' };
+      const uname = document.getElementById('dash-uname');
+      const urole = document.getElementById('dash-role');
+      if (uname) uname.textContent = sessionUser.nama;
+      if (urole) urole.textContent = (rl[sessionUser.role] || sessionUser.role) + ' • SD Negeri 3 Kalipang';
+      setTimeout(() => { if (typeof avatarLoad === 'function') avatarLoad(); }, 50);
+      // Langsung ke dashboard tanpa login ulang
+      const target = sessionUser.role === 'kepsek' ? 'kepsek' : 'dash';
+      goScreen(target);
+      idleStart();
+    } else {
+      document.getElementById('screen-login').style.display = 'flex';
+    }
+  } catch (err) {
+    // Fallback: pastikan login tetap tampil walau ada error
+    console.error('[SDN3] Init error:', err);
+    document.querySelectorAll('.screen').forEach(s => { s.style.display = 'none'; });
+    const loginEl = document.getElementById('screen-login');
+    if (loginEl) loginEl.style.display = 'flex';
   }
 });
 
