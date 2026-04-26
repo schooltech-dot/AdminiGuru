@@ -117,47 +117,40 @@ function goScreen(id) {
   if (id === 'perpustakaan') perpusLoad();
 }
 
-window.addEventListener('DOMContentLoaded', function () {
-  // Inisialisasi akun default (async, tidak blokir UI)
-  initDefaultAccounts();
-  // Sembunyikan semua screen
+window.addEventListener('DOMContentLoaded', async function () {
+  // Sembunyikan semua screen dulu
   document.querySelectorAll('.screen').forEach(s => { s.style.display = 'none'; });
+
+  // Inisialisasi akun default — await agar selesai sebelum cek sesi
+  await initDefaultAccounts();
+
   // Set tanggal hari ini
   const d = new Date();
   const tgl = d.toISOString().split('T')[0];
   document.getElementById('abs-tgl').value = tgl;
-  // Tambahkan soal demo ke ujian
+
+  // Init data & modul
   initDemoUjian();
-  // Init penilaian
   initPenilaian();
-  if(Object.keys(jadwalData).length===0) initJadwalDemo();
+  if (Object.keys(jadwalData).length === 0) initJadwalDemo();
   materiInit();
   jurnalInit();
 
   // ── Restore sesi jika sudah pernah login ──
   if (sessionUser) {
-    // Validasi: pastikan akun masih ada di localStorage
-    const accounts = LS.get('user_accounts', []);
-    const akunMasihAda = accounts.find(a => a.username === sessionUser.username);
-    if (!akunMasihAda) {
-      // Akun sudah dihapus → paksa login ulang
-      localStorage.removeItem('sdn3_sesi');
-      sessionUser = null;
-      document.getElementById('screen-login').style.display = 'flex';
-      return;
-    }
-    // Pulihkan nama & role di header dashboard
+    // Pulihkan tampilan dashboard
     const rl = { guru: 'Guru', kepsek: 'Kepala Sekolah', admin: 'Administrator' };
     const uname = document.getElementById('dash-uname');
     const urole = document.getElementById('dash-role');
     if (uname) uname.textContent = sessionUser.nama;
     if (urole) urole.textContent = (rl[sessionUser.role] || sessionUser.role) + ' • SD Negeri 3 Kalipang';
     setTimeout(() => avatarLoad(), 50);
-    // Langsung ke screen yang sesuai tanpa perlu login lagi
+    // Langsung ke dashboard tanpa login ulang
     const target = sessionUser.role === 'kepsek' ? 'kepsek' : 'dash';
     goScreen(target);
+    idleStart(); // mulai hitung idle dari sini
   } else {
-    // Belum login → tampilkan halaman login
+    // Belum pernah login → tampilkan halaman login
     document.getElementById('screen-login').style.display = 'flex';
   }
 });
@@ -388,17 +381,56 @@ async function doLogin() {
   setTimeout(() => avatarLoad(), 100);
 
   const targetScreen = akun.role === 'kepsek' ? 'kepsek' : 'dash';
-  setTimeout(() => goScreen(targetScreen), 800);
+  setTimeout(() => { goScreen(targetScreen); idleStart(); }, 800);
 }
 
 function doLogout() {
   sessionUser = null;
   try { localStorage.removeItem('sdn3_sesi'); } catch {}
+  idleStop(); // hentikan timer idle
   loginAttempts.count = 0;
   document.getElementById('inp-username').value = '';
   document.getElementById('inp-password').value = '';
   document.getElementById('login-msg').className = 'msg-box';
   goScreen('login');
+}
+
+// ============================================================
+// ==================== AUTO-LOGOUT IDLE 30 MENIT =============
+// ============================================================
+const IDLE_LIMIT = 30 * 60 * 1000; // 30 menit dalam ms
+let _idleTimer = null;
+
+function idleReset() {
+  // Simpan timestamp aktivitas terakhir
+  localStorage.setItem('sdn3_last_active', Date.now());
+  if (_idleTimer) clearTimeout(_idleTimer);
+  if (!sessionUser) return;
+  _idleTimer = setTimeout(() => {
+    // Cek ulang: mungkin user aktif di tab lain
+    const last = parseInt(localStorage.getItem('sdn3_last_active') || '0');
+    if (Date.now() - last >= IDLE_LIMIT) {
+      showPopup('Sesi berakhir karena tidak ada aktivitas selama 30 menit.', 'warning', 'Sesi Berakhir', 5000);
+      setTimeout(() => doLogout(), 1500);
+    } else {
+      // Masih aktif di tab lain, reset timer sisa
+      idleReset();
+    }
+  }, IDLE_LIMIT);
+}
+
+function idleStart() {
+  ['mousemove','mousedown','keydown','touchstart','scroll','click'].forEach(ev => {
+    document.addEventListener(ev, idleReset, { passive: true });
+  });
+  idleReset();
+}
+
+function idleStop() {
+  if (_idleTimer) { clearTimeout(_idleTimer); _idleTimer = null; }
+  ['mousemove','mousedown','keydown','touchstart','scroll','click'].forEach(ev => {
+    document.removeEventListener(ev, idleReset);
+  });
 }
 
 // ============================================================
